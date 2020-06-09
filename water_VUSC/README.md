@@ -35,6 +35,38 @@ Second, please prepare a photon_params.json file to control the parameters of ca
 }
 </code></pre>
 These information are mandatory for cavity MD simulations:
+- "apply_photon" denotes whether including cavity effects or not.
 - "eff_mass" denotes the effective mass of photons, which is taken as 1.0 a.u. (atomic units) for convenience.
 - "freqs_cm" denotes the frequency of the fundamental photon mode in units of wave number.
 - "E0" denotes <code>$$ \widetilde{\varepsilon} $$</code> (effective coupling strength in units of a.u.) for the fundamental photon mode.
+
+# Multiple Rabi splitting
+
+Besides, there are some optional parameters which allow more complicated cavity MD simulations. For example, if the photon_params.json is 
+<pre><code>
+{
+  "apply_photon" : true,
+  "eff_mass" : 1.0,
+  "freqs_cm" : 1775,
+  "E0" : 0.0002,
+  "n_modes" : 4
+}
+</code></pre>
+- The new option "n_modes" will include 4 (four different cavity modes with spacing "freqs_cm") * 2 (two polarization directions) photons, which will allow simulating multiple Rabi splitting, i.e., different cavity modes forms Rabi splittings with different vibrational normal modes of molecules. 
+
+Remember that "E0" denotes the effective coupling strength for the fundamental (or with smallest frequency) cavity mode.
+
+# Going beyond water simulation
+
+If you want to go beyond the cavity MD simulations of liquid water and try other molecules, please add an additional control to photon_params.json:
+<pre><code>
+{
+  "apply_photon" : true,
+  "eff_mass" : 1.0,
+  "freqs_cm" : 1775,
+  "E0" : 0.0002,
+  "n_modes" : 4,
+  "charge_array": [0.33, -0.33, ...]
+}
+</code></pre>
+Here, the option "charge_array" will redefine the partial charge of each atom in the order of configurations. The number of partial charges should match the number of atoms in the simulations.
