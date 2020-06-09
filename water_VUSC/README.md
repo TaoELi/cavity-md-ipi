@@ -23,7 +23,7 @@ ATOM    649    L   1     1       0.000   0.000   0.000  0.00  0.00            0
 ATOM    650    L   1     1       0.000   0.000   0.000  0.00  0.00            0
 </code></pre>
 
-Here, I add two photons (labelled by L). Typically the number of photons should be even due to the two polarization  directions of each single cavity mode. For the LAMMPS data file (data.lmp), please leave it alone and do not do modifications, because we will not throw the information of photons to LAMMPS.
+Here, I add two photons (labelled by L). Typically the number of photons should be even due to the two polarization  directions (which are set as x and y directions here) of each single cavity mode, where the cavity direction is set at z-drection. For the LAMMPS data file (data.lmp), please leave it alone and do not do modifications, because we will not throw the information of photons to LAMMPS. 
 
 Second, please prepare a photon_params.json file to control the parameters of cavity mode:
 <pre><code>
@@ -52,7 +52,7 @@ Besides, there are some optional parameters which allow more complicated cavity 
   "n_modes" : 4
 }
 </code></pre>
-- The new option "n_modes" will include 4 (four different cavity modes with spacing "freqs_cm") * 2 (two polarization directions) photons, which will allow simulating multiple Rabi splitting, i.e., different cavity modes forms Rabi splittings with different vibrational normal modes of molecules.  Of course, in init.pdb, please add 4 * 2 photons at the end.
+- The new option "n_modes" will include 4 (four different cavity modes with spacing "freqs_cm") * 2 (two polarization directions) photons, which will allow simulating multiple Rabi splitting, i.e., different cavity modes forms Rabi splittings with different vibrational normal modes of molecules.  Of course, in init.pdb, please add 4 * 2 photons at the end. All photon modes are still at x or y-direction. Note that here I do not include the photons with in-plane wave vectors rather than 0.
 
 Remember that "E0" denotes the effective coupling strength for the fundamental (or with smallest frequency) cavity mode.
 
