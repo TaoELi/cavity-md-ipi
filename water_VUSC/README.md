@@ -38,7 +38,7 @@ These information are mandatory for cavity MD simulations:
 - "apply_photon" denotes whether including cavity effects or not.
 - "eff_mass" denotes the effective mass of photons, which is taken as 1.0 a.u. (atomic units) for convenience.
 - "freqs_cm" denotes the frequency of the fundamental photon mode in units of wave number.
-- "E0" denotes <code>$$ \widetilde{\varepsilon} $$</code> (effective coupling strength in units of a.u.) for the fundamental photon mode.
+- "E0" denotes <img src="https://latex.codecogs.com/svg.latex?\tilde{\varepsilon}" /> (effective coupling strength in units of a.u.) for the fundamental photon mode; see [here](https://arxiv.org/abs/2004.04888) for details.
 
 # Multiple Rabi splitting
 
