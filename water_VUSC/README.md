@@ -58,7 +58,7 @@ Remember that "E0" denotes the effective coupling strength for the fundamental (
 
 # Going beyond water simulation
 
-If you want to go beyond the cavity MD simulations of liquid water and try other molecules, please add an additional control to photon_params.json:
+If you want to go beyond the cavity MD simulations of liquid water and try other molecules, please change init.pdb, in.lmp, and data.lmp to the system you are interested in and also add an additional control to photon_params.json:
 <pre><code>
 {
   "apply_photon" : true,
