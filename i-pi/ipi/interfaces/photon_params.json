@@ -1,0 +1,10 @@
+{
+  "apply_photon" : true,
+  "eff_mass" : 1.0,
+  "freqs_cm" : 3400.0,
+  "E0" : 0.001,
+  "add_pulse" : true,
+  "pulse_params": [1.0, 10.0, 3550.0, 3.14, 10.0],
+  "pulse_atoms": [0, 1, 2],
+  "dt" : 0.5
+}
