@@ -32,11 +32,11 @@ I will also keep updating new examples for other applications.
 
 ## Citations
 
-- If you find cavity MD useful for your research, please cite:
+If you find cavity MD useful for your research, please cite:
 
-Li, T. E., Nitzan, A., & Subotnik, J. E. (2020). Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. [http://arxiv.org/abs/2004.04888](http://arxiv.org/abs/2004.04888)
+- Li, T. E., Nitzan, A., & Subotnik, J. E. (2020). Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. [http://arxiv.org/abs/2004.04888](http://arxiv.org/abs/2004.04888)
 
-- If you directly use the provided code in your simulations, please also cite the original [i-pi](http://ipi-code.org/) package which provides a fancy and user-friendly interface for simulating nuclear dynamics:
+If you directly use the provided code in your simulations, please also cite the original [i-pi](http://ipi-code.org/) package which provides a fancy and user-friendly interface for simulating nuclear dynamics:
 
-Kapil, V., Rossi, M., Marsalek, O., Petraglia, R., Litman, Y., Spura, T., … Ceriotti, M. (2019). i-PI 2.0: A universal force engine for advanced molecular simulations. Computer Physics Communications, 236, 214–223. [https://doi.org/10.1016/j.cpc.2018.09.020](https://doi.org/10.1016/j.cpc.2018.09.020)
+- Kapil, V., Rossi, M., Marsalek, O., Petraglia, R., Litman, Y., Spura, T., … Ceriotti, M. (2019). i-PI 2.0: A universal force engine for advanced molecular simulations. Computer Physics Communications, 236, 214–223. [https://doi.org/10.1016/j.cpc.2018.09.020](https://doi.org/10.1016/j.cpc.2018.09.020)
 
