@@ -8,7 +8,7 @@
 
 3.1. If using NERSC, go to each folder (e.g., single_mode_g0/) and run <pre><code>./submit_xx.sh </code></pre> and the jobs will be automatically submitted in NERSC. The whole simulation may take longer than 48 hours. If you find that your job is killed by server while the job has not completely finished, please resubmit with command ./submit_xx.sh and the job can continue from the last checkpoint.
 
-3.2. If using personal computer, please go to folder test/ and run <pre><code> i-pi input_traj.xml &> log & </code></pre> then <pre><code>lmp < in.lmp </code></pre> After a while (~ 1h), you will finish one-trajectory simulation.
+3.2. If using personal computer, please go to folder test/ and run <pre><code> i-pi input_traj_1.xml &> log & </code></pre> then <pre><code>lmp < in.lmp </code></pre> After a while (~ 1h), you will finish one-trajectory simulation.
 
 4. After simulation, we should analysis 80 * 20 ps equilibrium trajectories. Command line <pre><code>python collect_*.py folder/subfolders </code></pre> to obtain all necessary molecular properties.
 
