@@ -50,12 +50,18 @@ class photon:
 class photons:
     def __init__(self):
         self.hartree_to_cm_minus1 = 219474.63
-        print "### Initialise many photon modes from photon_params.json ###"
         path = os.getcwd()
-        with open(path+"/photon_params.json") as json_file:
-            data = json.load(json_file)
-        self.apply_photon = data["apply_photon"]
+        self.apply_photon = True
+        try:
+            with open(path+"/photon_params.json") as json_file:
+                data = json.load(json_file)
+        except:
+            print "Not found photon_params.json, do conventional nuclear dynamics"
+            self.apply_photon = False
         if self.apply_photon:
+            self.apply_photon = data["apply_photon"]
+        if self.apply_photon:
+            print "### Initialise many photon modes from photon_params.json ###"
             self.nmodes = data.get("n_modes", 1)
             self.nphoton = self.nmodes * 2
             self.mass = data["eff_mass"]
@@ -81,7 +87,6 @@ class photons:
             self.coeff_self = np.sum(self.E0_lst[0:self.nmodes]**2 / self.mass / self.freq_lst[0:self.nmodes]**2)
             self.pot_coeff = 0.5 * self.mass * self.freq_lst**2
             self.pot_coeff2 = self.mass * np.reshape(np.array([[x,x,x] for x in self.freq_lst]), -1)**2
-
         else:
             print "No photon applied"
         print "### End of initialization ###"

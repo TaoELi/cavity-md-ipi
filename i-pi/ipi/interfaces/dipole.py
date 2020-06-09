@@ -10,43 +10,49 @@ class dipole:
     def __init__(self):
         self.have_not_set = True
         path = os.getcwd()
-        print "### Initialise dipole moments from photon_params.json ###"
-        with open(path+"/photon_params.json") as json_file:
-            data = json.load(json_file)
+        self.run_photon = True
+        try:
+            with open(path+"/photon_params.json") as json_file:
+                data = json.load(json_file)
+                print "### Initialise dipole moments from photon_params.json ###"
+        except:
+            self.run_photon = False
+            print "Not found photon_params.json, do conventional nuclear dynamics"
         # Read necessary input from json_file
         # If photon_params.json contains "charge_array" key, it will load it;
         # otherwise we assume that we do H2O simulation with partial charge defined
         # by q-tip4p-f force field
         self.not_have_charge_array = True
-        if data.get("charge_array") is not None:
-            print "### Initialise charge array from file ###"
-            self.charge_array = np.array(data["charge_array"])
-            print self.charge_array
-            print "### End of initialise charge array from file ###"
-            self.not_have_charge_array = False
-        # Find if photon_params.json has defined an incoming pulse at initial times
-        self.have_incoming_pulse = data.get("add_pulse", False)
-        if self.have_incoming_pulse:
-            self.add_pulse_direction = data.get("add_pulse_direction", 0)
-            print "## Adding a pulse at %d direction (0-x, 1-y, 2-z) ##" %self.add_pulse_direction
-            # pulse_params = ["E0", "tau_FWHM", "omega", "phase", "t0"]
-            self.pulse_params = data.get("pulse_params", [1.0, 10.0, 3550.0, 3.14, 10.0])
-            self.pulse_params[2] *= 2.998e-5 * 2.0 * np.pi # unit converse from cm-1 to 2pi*fs-1
-            # pulse_atoms = [1, 2, 3]
-            self.pulse_atoms = np.array(data.get("pulse_atoms", [0, 1, 2]), dtype=np.int32)
-            self.pulse_all_atoms = False
-            if data.get("pulse_atoms", [0, 1, 2]) == [-1]:
-                self.pulse_all_atoms = True
-            print "## excite the following atoms: [-1] means exciting all atoms ##"
-            print self.pulse_atoms
-            # calculate the corresponding index in the force (correspond to the x axis)
-            # atom 1 atom 2 atom 3
-            self.pulse_atoms_force_index = np.array([x*3+self.add_pulse_direction for x in self.pulse_atoms])
-            self.t = 0.0
-            self.dt = data.get("dt", 0.5)
-            print "## add initial pulse with E0 %.2E at time %.2f ##" %(self.pulse_params[0], self.pulse_params[4])
-        else:
-            print "## have not set initial pulse ##"
+        if self.run_photon:
+            if data.get("charge_array") is not None:
+                print "### Initialise charge array from file ###"
+                self.charge_array = np.array(data["charge_array"])
+                print self.charge_array
+                print "### End of initialise charge array from file ###"
+                self.not_have_charge_array = False
+            # Find if photon_params.json has defined an incoming pulse at initial times
+            self.have_incoming_pulse = data.get("add_pulse", False)
+            if self.have_incoming_pulse:
+                self.add_pulse_direction = data.get("add_pulse_direction", 0)
+                print "## Adding a pulse at %d direction (0-x, 1-y, 2-z) ##" %self.add_pulse_direction
+                # pulse_params = ["E0", "tau_FWHM", "omega", "phase", "t0"]
+                self.pulse_params = data.get("pulse_params", [1.0, 10.0, 3550.0, 3.14, 10.0])
+                self.pulse_params[2] *= 2.998e-5 * 2.0 * np.pi # unit converse from cm-1 to 2pi*fs-1
+                # pulse_atoms = [1, 2, 3]
+                self.pulse_atoms = np.array(data.get("pulse_atoms", [0, 1, 2]), dtype=np.int32)
+                self.pulse_all_atoms = False
+                if data.get("pulse_atoms", [0, 1, 2]) == [-1]:
+                    self.pulse_all_atoms = True
+                print "## excite the following atoms: [-1] means exciting all atoms ##"
+                print self.pulse_atoms
+                # calculate the corresponding index in the force (correspond to the x axis)
+                # atom 1 atom 2 atom 3
+                self.pulse_atoms_force_index = np.array([x*3+self.add_pulse_direction for x in self.pulse_atoms])
+                self.t = 0.0
+                self.dt = data.get("dt", 0.5)
+                print "## add initial pulse with E0 %.2E at time %.2f ##" %(self.pulse_params[0], self.pulse_params[4])
+            else:
+                print "## have not set initial pulse ##"
 
     def add_pulse(self, mf):
         if self.have_incoming_pulse:
