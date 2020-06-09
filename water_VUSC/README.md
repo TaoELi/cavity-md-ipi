@@ -52,7 +52,7 @@ Besides, there are some optional parameters which allow more complicated cavity 
   "n_modes" : 4
 }
 </code></pre>
-- The new option "n_modes" will include 4 (four different cavity modes with spacing "freqs_cm") * 2 (two polarization directions) photons, which will allow simulating multiple Rabi splitting, i.e., different cavity modes forms Rabi splittings with different vibrational normal modes of molecules. 
+- The new option "n_modes" will include 4 (four different cavity modes with spacing "freqs_cm") * 2 (two polarization directions) photons, which will allow simulating multiple Rabi splitting, i.e., different cavity modes forms Rabi splittings with different vibrational normal modes of molecules.  Of course, in init.pdb, please add 4 * 2 photons at the end.
 
 Remember that "E0" denotes the effective coupling strength for the fundamental (or with smallest frequency) cavity mode.
 
