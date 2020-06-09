@@ -13,3 +13,28 @@
 4. After simulation, we should analysis 80 * 20 ps equilibrium trajectories. Command line <pre><code>python collect_*.py folder/subfolders </code></pre> to obtain all necessary molecular properties.
 
 5. Go to each folder, run <pre><code>python plot_which_you_are_interested_in.py </code></pre> and you will obtain the published figures.
+
+# What is different from conventional i-pi simulation?
+
+The difference is small. Assuming that you have prepared all files for runing conventional nuclear dynamics with i-pi + LAMMPS, then please add photon modes at the end of the init.pdb file like this:
+
+<pre><code>
+ATOM    649    L   1     1       0.000   0.000   0.000  0.00  0.00            0
+ATOM    650    L   1     1       0.000   0.000   0.000  0.00  0.00            0
+</code></pre>
+
+Here, I add two photons (labelled by L). Typically the number of photons should be even due to the two polarization  directions of each single cavity mode. For the LAMMPS data file (data.lmp), please leave it alone and do not do modifications, because we will not throw the information of photons to LAMMPS.
+
+Second, please prepare a photon_params.json file to control the parameters of cavity mode:
+<pre><code>
+{
+  "apply_photon" : true,
+  "eff_mass" : 1.0,
+  "freqs_cm" : 3550.0,
+  "E0" : 0.0005
+}
+</code></pre>
+These information are mandatory for cavity MD simulations:
+- "eff_mass" denotes the effective mass of photons, which is taken as 1.0 a.u. (atomic units) for convenience.
+- "freqs_cm" denotes the frequency of the fundamental photon mode in units of wave number.
+- "E0" denotes <code>$$ \widetilde{\varepsilon} $$</code> (effective coupling strength in units of a.u.) for the fundamental photon mode.
