@@ -18,6 +18,12 @@ The implementation of cavity MD relies on conventional MD packages. Currently, I
 
 In the future, when the development of cavity MD is stablized, I will also implement this approach in other MD packages for a faster and computationally cheaper realization. If you are a MD developer and has questions on the implementation of cavity MD in your package, please feel free to contact me: t.e.li@outlook.com or taoli@sas.upenn.edu.
 
+## Folder structrucure
+
+- i-pi: source code, the modified i-pi package which enables simulating VSC and V-USC.
+
+- water_VUSC: input, job submission, post-processing, and plotting of the simulation of liquid water for this [publication](https://arxiv.org/abs/2004.04888).
+
 ## How to use cavity MD to do simulation NOW?
 
 Please check the README in folder "water_VUSC" for a step-by-step introduction on [simulating VSC and V-USC for liquid water](https://arxiv.org/abs/2004.04888). If you are experienced in MD, it will be very easy to replace the force field and configuration of liquid water to other molecules and do your own simulations. Again, for any questions, feel free to contact me: t.e.li@outlook.com or taoli@sas.upenn.edu.
