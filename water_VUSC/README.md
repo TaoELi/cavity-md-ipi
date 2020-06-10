@@ -7,7 +7,7 @@ python2 setup.py install --prefix=~
 </code></pre> 
 which will allow the installation of i-pi at $HOME/bin/i-pi. Unfortunately, currently I develop based on the old-fashioned python2.7. I will also provide a python3 version of cavity MD shortly.
 
-2. Ensure that a recent version of LAMMPS (say, 2019) is also installed. In Ubuntu, LAMMPS can be installed by <pre><code>sudo apt get install lammps </code></pre>. In government supercomputer like NERSC, LAMMPS can be installed by <pre><code> module load lammps </code></pre>.
+2. Ensure that a recent version of LAMMPS (say, 2019) is also installed. In Ubuntu, LAMMPS can be installed by <pre><code>sudo apt get install lammps </code></pre> In government supercomputer like NERSC, LAMMPS can be installed by <pre><code> module load lammps </code></pre>
 
 3. Now, we can run cavity MD.
 
