@@ -25,7 +25,8 @@ to obtain the Rabi splitting spectrum.
 
 - If using NERSC, go to each folder (e.g., single_mode_g0/) and run <pre><code>./submit_xx.sh </code></pre> and the jobs will be automatically submitted in NERSC. The whole simulation may take longer than 48 hours. If you find that your job is killed by server while the job has not completely finished, please resubmit with command ./submit_xx.sh and the job can continue from the last checkpoint.
 
-After simulation, we should analysis 80 * 20 ps equilibrium trajectories. Command line <pre><code>python collect_all_data_N.py folder/subfolders </code></pre> to obtain all necessary molecular properties. Go to each folder, run <pre><code>python plot_which_you_are_interested_in.py </code></pre> and you will obtain the published figures.
+After simulation, we should analysis 80 * 20 ps equilibrium trajectories. Command line <pre><code>python collect_all_data_N.py folder/subfolders </code></pre> to obtain all necessary molecular properties. Go to each folder, run <pre><code>module load texlive
+python plot_which_you_are_interested_in.py </code></pre> and you will obtain the published figures.
 
 # What is different from conventional i-pi simulation?
 
