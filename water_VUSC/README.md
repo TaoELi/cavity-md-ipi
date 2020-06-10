@@ -84,3 +84,5 @@ If you want to go beyond the cavity MD simulations of liquid water and try other
 }
 </code></pre>
 Here, the option "charge_array" will redefine the partial charge of each atom in the order of configurations. The number of partial charges should match the number of atoms in the simulations.
+
+A tutorial of running cavity MD for a certain molecular system starting from stratch will be posted shortly for those who has literately *zero* background in MD simulation. 
