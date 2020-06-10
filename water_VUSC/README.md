@@ -1,6 +1,12 @@
 # HOW TO run cavity MD for liquid water?
 
-1. "Install" the modified i-pi on your personal computer or goverment supercomputer (e.g., nersc); see [here](http://ipi-code.org/resources/documentation/) for a guide. The simplest way is to add <pre><code> source ~/which_path/cavity-md-ipi/i-pi/env.sh </code></pre> to your .bashrc and then source it.
+1. "Install" the modified i-pi on your personal computer or goverment supercomputer (e.g., nersc); see [here](http://ipi-code.org/resources/documentation/) for a guide. One can do it by 
+<pre><code>
+cd which_path_you_download/cavity-md-ipi/i-pi/
+python2 setup.py build
+python2 setup.py install --prefix=~
+</code></pre> 
+which will allow the installation of i-pi at $HOME/bin/i-pi.
 
 2. Ensure that LAMMPS is also installed and you can use it with command <pre><code>lmp < in.lmp </code></pre>
 
