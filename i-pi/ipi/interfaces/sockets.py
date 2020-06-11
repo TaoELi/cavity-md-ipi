@@ -455,6 +455,7 @@ class Driver(DriverSocket):
             mf[0::3] += - (Ex + self.photons.coeff_self * dipole_x_tot)  * self.dipole.calc_dmudx()
             mf[1::3] += - (Ey + self.photons.coeff_self * dipole_y_tot)  * self.dipole.calc_dmudy()
             self.dipole.add_pulse(mf)
+            self.dipole.add_cw(mf)
 
             #f_photon = np.zeros(6, np.float64)
             #f_photon[0:3] = self.photon.obtain_bare_force()
