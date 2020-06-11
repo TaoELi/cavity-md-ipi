@@ -32,6 +32,7 @@ class dipole:
                 self.not_have_charge_array = False
             # Find if photon_params.json has defined an incoming pulse at initial times
             self.have_incoming_pulse = data.get("add_pulse", False)
+            self.have_incoming_cw = data.get("add_cw", False)
             if self.have_incoming_pulse:
                 self.add_pulse_direction = data.get("add_pulse_direction", 0)
                 print "## Adding a pulse at %d direction (0-x, 1-y, 2-z) ##" %self.add_pulse_direction
@@ -53,6 +54,28 @@ class dipole:
                 print "## add initial pulse with E0 %.2E at time %.2f ##" %(self.pulse_params[0], self.pulse_params[4])
             else:
                 print "## have not set initial pulse ##"
+            if self.have_incoming_cw:
+                self.add_cw_direction = data.get("add_cw_direction", 0)
+                print "## Adding a cw field at %d direction (0-x, 1-y, 2-z) ##" %self.add_cw_direction
+                # cw_params = ["E0", "omega", "phase", "tstart", "tend"]
+                self.cw_params = data.get("cw_params", [1e-3, 3550.0, 3.14, 10.0, 1e4])
+                self.cw_params[1] *= 2.998e-5 * 2.0 * np.pi # unit converse from cm-1 to 2pi*fs-1
+                # cw_atoms = [1, 2, 3]
+                self.cw_atoms = np.array(data.get("cw_atoms", [0, 1, 2]), dtype=np.int32)
+                self.cw_all_atoms = False
+                if data.get("cw_atoms", [0, 1, 2]) == [-1]:
+                    self.cw_all_atoms = True
+                print "## excite the following atoms: [-1] means exciting all atoms ##"
+                print self.cw_atoms
+                # calculate the corresponding index in the force (correspond to the x axis)
+                # atom 1 atom 2 atom 3
+                self.cw_atoms_force_index = np.array([x*3+self.add_cw_direction for x in self.cw_atoms])
+                self.t = 0.0
+                self.dt = data.get("dt", 0.5)
+                print "## add initial cw with E0 %.2E at time %.2f ending at \
+                    %.2f##" %(self.cw_params[0], self.cw_params[3], self.cw_params[4])
+            else:
+                print "## have not set initial cw ##"
 
     def add_pulse(self, mf):
         if self.have_incoming_pulse:
@@ -64,6 +87,13 @@ class dipole:
                     * 2.0 * np.log(2.0)) * np.cos(self.pulse_params[2]*self.t + self.pulse_params[3])
                 mf[self.pulse_atoms_force_index] -= Ex * self.charges[self.pulse_atoms]
 
+    def add_cw(self, mf):
+        if self.have_incoming_cw:
+            self.t += self.dt
+            if self.t > self.cw_params[3] and self.t < self.cw_params[4]:
+                self.set_charges()
+                Ex = self.cw_params[0] * np.cos(self.cw_params[1]*self.t + self.cw_params[2])
+                mf[self.cw_atoms_force_index] -= Ex * self.charges[self.cw_atoms]
 
     def set_charges(self):
         if self.have_not_set:
@@ -84,6 +114,9 @@ class dipole:
             if self.have_incoming_pulse and self.pulse_all_atoms:
                 self.pulse_atoms = np.array([n for n in range(np.size(self.pos[:,0]))])
                 self.pulse_atoms_force_index = np.array([x*3+self.add_pulse_direction for x in self.pulse_atoms])
+            if self.have_incoming_cw and self.cw_all_atoms:
+                self.cw_atoms = np.array([n for n in range(np.size(self.pos[:,0]))])
+                self.cw_atoms_force_index = np.array([x*3+self.add_cw_direction for x in self.cw_atoms])
 
     def update_pos(self, pos):
         self.pos = np.reshape(pos, (-1, 3))
