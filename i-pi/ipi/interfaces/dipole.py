@@ -143,6 +143,10 @@ class dipole:
         self.set_charges()
         return np.sum(self.charges * self.pos[:,2])
 
+    def calc_dipoles_tot_array(self):
+        self.set_charges()
+        return np.reshape(np.array([self.calc_dipoles_x_tot(), self.calc_dipoles_y_tot(), self.calc_dipoles_z_tot()]), (1,3))
+
     def calc_dipoles_x_which(self, i=0):
         "calculate the total value of the x_component of the molecular dipole"
         self.set_charges()
