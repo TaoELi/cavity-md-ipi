@@ -440,7 +440,7 @@ class Driver(DriverSocket):
         Before returning the data, I need to append the information of the photon
         mode...
         """
-        if self.apply_photon:
+        if self.apply_photon and not self.photons.apply_inplane_dist:
             # 1. Modify energy
             mu_photon = self.photons.obtain_potential()
             Ex = self.photons.obtain_Ex()
@@ -457,13 +457,16 @@ class Driver(DriverSocket):
             self.dipole.add_pulse(mf)
             self.dipole.add_cw(mf)
 
-            #f_photon = np.zeros(6, np.float64)
-            #f_photon[0:3] = self.photon.obtain_bare_force()
-            #f_photon[3:] = self.photon2.obtain_bare_force()
-            #f_photon[0] += - self.photon.obtain_dEdx() * dipole_x_tot
-            #f_photon[4] += - self.photon2.obtain_dEdx() * dipole_y_tot
             f_photon = self.photons.calc_photon_force(dipole_x_tot, dipole_y_tot)
+            mf = np.concatenate((mf[:], f_photon[:]))
 
+        elif self.apply_photon and self.photons.apply_inplane_dist:
+            # 1. Modify energy
+            mu_photon = self.photons.obtain_potential()
+            dipole_tot_array = self.dipole.calc_dipoles_tot_array()
+            # 2. Modify force
+            mf += self.photons.calc_nuclear_force_cavity(dipole_tot_array, self.dipole.charges)
+            f_photon = self.photons.calc_photon_force_inplane(dipole_tot_array)
             mf = np.concatenate((mf[:], f_photon[:]))
         # End of Tao's modification
 
