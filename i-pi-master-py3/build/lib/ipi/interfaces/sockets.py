@@ -24,8 +24,8 @@ from ipi.utils.messages import verbosity, warning, info
 from ipi.utils.softexit import softexit
 
 # Start Tao's modification
-from .photons import photons
-from .dipole import dipole
+from photons import photons
+from dipole import dipole
 # End Tao's modification
 
 __all__ = ['InterfaceSocket']
@@ -355,7 +355,7 @@ class Driver(DriverSocket):
         # Apply ABC to the pos_no_photon
         self.pos_no_photon = dstrip(self.pos_no_photon).copy()
         s = dstrip(self.pos_no_photon).copy()
-        s.shape = (len(self.pos_no_photon) // 3, 3)
+        s.shape = (len(self.pos_no_photon) / 3, 3)
         s = np.dot(h_ih[1], s.T)
         s = s - np.round(s)
         s = np.dot(h_ih[0], s).T

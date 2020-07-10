@@ -1,0 +1,9 @@
+{
+  "apply_photon" : true,
+  "eff_mass" : 1.0,
+  "freqs_cm" : 3550.0,
+  "E0" : 0.0002,
+  "n_modes" : 81,
+  "apply_inplane_dist" : true,
+  "inplane_kmax_ratio" : 0.4
+}
