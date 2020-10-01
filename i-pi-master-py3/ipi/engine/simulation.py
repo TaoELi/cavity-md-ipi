@@ -187,7 +187,7 @@ class Simulation(dobject):
             raise ValueError("Output filenames are not unique. Modify filename attributes.")
 
         self.outputs = []
-        for o in self.outtemplate:            
+        for o in self.outtemplate:
             dco = deepcopy(o)  # avoids overwriting the actual filename
             if self.outtemplate.prefix != "":
                 dco.filename = self.outtemplate.prefix + "." + o.filename

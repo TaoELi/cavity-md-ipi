@@ -179,20 +179,6 @@ class ThermoLangevin(Thermostat):
         dself.S = depend_value(name="S", func=self.get_S,
                                dependencies=[dself.temp, dself.T])
 
-        # Tao E. Li modified at July 5 2020
-        # I want to give the ability to rescale only a few momenta for photons only
-        dself.thermalize_photon_only = False
-        path = os.getcwd()
-        with open(path+"/photon_params.json") as json_file:
-            data = json.load(json_file)
-        if data["apply_photon"] and data.get("theramlize_photon_only", False):
-            dself.thermalize_photon_only = True
-            print("## We thermalize photon only with a Langevin thermostat ##")
-        dself.thermalize_photon_start = 0
-        if data["apply_photon"] and dself.thermalize_photon_only:
-            dself.thermalize_phton_start = -data.get("n_modes", 1) * 2 * 3
-            print("## We start from %d ##" %self.thermalize_phton_start)
-        # End of Tao E. Li modification
 
     def step(self):
         """Updates the bound momentum vector with a langevin thermostat."""
@@ -204,13 +190,8 @@ class ThermoLangevin(Thermostat):
         p /= sm
 
         et += np.dot(p, p) * 0.5
-        # original code
-        #p *= self.T
-        #p += self.S * self.prng.gvec(len(p))
-        # Tao E. Li's modification new code
-        p[self.thermalize_phton_start:] *= self.T
-        p[self.thermalize_phton_start:] += self.S * self.prng.gvec(len(p[self.thermalize_phton_start:]))
-        # end of Tao E. Li's modifications
+        p *= self.T
+        p += self.S * self.prng.gvec(len(p))
         et -= np.dot(p, p) * 0.5
 
         p *= sm

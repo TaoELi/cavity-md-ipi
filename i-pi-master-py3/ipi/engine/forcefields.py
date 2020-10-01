@@ -22,6 +22,7 @@ from ipi.utils.depend import dobject
 from ipi.utils.depend import dstrip
 from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal, unit_to_user, UnitMap
+from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
 
 try:
     import plumed
@@ -754,3 +755,65 @@ class FFsGDML(ForceField):
         r["result"] = [E[0] * self.kcalmol_to_hartree, F.flatten() * self.kcalmolang_to_hartreebohr, np.zeros((3, 3), float), ""]
         r["status"] = "Done"
         r["t_finished"] = time.time()
+
+class FFCavPhSocket(ForceField):
+
+    """
+    Socket for dealing with cavity photons interacting with molecules by
+    Tao E. Li @ 2020-09-28
+    Check https://doi.org/10.1073/pnas.2009272117 for details
+
+    Interface between the PIMD code and a socket for a single replica.
+
+    Deals with an individual replica of the system, obtaining the potential
+    force and virial appropriate to this system. Deals with the distribution of
+    jobs to the interface.
+
+    Attributes:
+        socket: The interface object which contains the socket through which
+            communication between the forcefield and the driver is done.
+    """
+
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=True,
+                 active=np.array([-1]), threaded=True, interface=None):
+        """Initialises FFCavPhSocket.
+
+        Args:
+           latency: The number of seconds the socket will wait before updating
+              the client list.
+           name: The name of the forcefield.
+           pars: A dictionary used to initialize the forcefield, if required.
+              Of the form {'name1': value1, 'name2': value2, ... }.
+           dopbc: Decides whether or not to apply the periodic boundary conditions
+              before sending the positions to the client code.
+           interface: The object used to create the socket used to interact
+              with the client codes.
+        """
+
+        # a socket to the communication library is created or linked
+        super(FFCavPhSocket, self).__init__(latency, name, pars, dopbc, active, threaded)
+        if interface is None:
+            self.socket = InterfaceCavPhSocket()
+        else:
+            self.socket = interface
+        self.socket.requests = self.requests
+
+    def poll(self):
+        """Function to check the status of the client calculations."""
+
+        self.socket.poll()
+
+    def start(self):
+        """Spawns a new thread."""
+
+        self.socket.open()
+        super(FFCavPhSocket, self).start()
+
+    def stop(self):
+        """Closes the socket and the thread."""
+
+        super(FFCavPhSocket, self).stop()
+        if self._thread is not None:
+            # must wait until loop has ended before closing the socket
+            self._thread.join()
+        self.socket.close()
