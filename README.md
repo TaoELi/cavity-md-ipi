@@ -22,9 +22,9 @@ These experimental findings suggest that VSC or V-USC might provide a new means 
 
 - Computation of Rabi splitting in the IR spectrum for realistic molecular systems from VSC to V-USC without fitting experimental parameters. For more details, see [publication](https://doi.org/10.1073/pnas.2009272117) and the corresponding data in folder cavmd_examples/water_VUSC.
 
-- Description of polariton relaxation, polariton-enhanced multiphoton absorption, polariton-accelerated nonequilibrium molecular kinetics such as vibrational energy transfer, etc. For more details, see [publication](https://doi.org/10.1073/pnas.2009272117) and the corresponding data in folder cavmd_examples/CO2_nonequilibrium.
+- Description of polariton relaxation and polariton-enhanced multiphoton absorption. See [arXiv:2011.03192](https://arxiv.org/abs/2011.03192) for details.
 
-Other features including cavity catalytic effects are under development and will be released soon (written at Sep 29 2020).
+Other features including cavity catalytic effects are under development and will be released soon.
 
 
 ## Implementation
