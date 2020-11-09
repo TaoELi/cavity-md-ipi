@@ -53,7 +53,7 @@ If you find CavMD useful for your research, please cite:
 
 - Li, T. E., Subotnik, J. E., & Nitzan, A. (2020). Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. Proceedings of the National Academy of Sciences, 117(31), 18324–18331. https://doi.org/10.1073/pnas.2009272117
 
-- Li, T. E., Nitzan, A., & Subotnik, J. E. (2020). Cavity molecular dynamics simulations of enhanced nonlinear absorption and accelerated nonequilibrium kinetics under vibrational strong coupling. arXiv.
+- Li, T. E., Nitzan, A., & Subotnik, J. E. (2020). Atomistic Simulation of Vibrational Polariton Enhanced Molecular Nonlinear Absorption. [arXiv:2011.03192](https://arxiv.org/abs/2011.03192).
 
 If you directly use the provided code in your simulations, please also cite the original [i-pi](http://ipi-code.org/) package which provides a fancy and user-friendly interface for simulating nuclear dynamics:
 
