@@ -1,6 +1,6 @@
 # CavMD: Cavity Molecular Dynamics Simulations
 
-![setup](cavmd_examples/CO2_nonequilibrium/CO2Experiments/setup.png)
+![setup](cavmd_examples/CO2_laserPolariton/CO2Experiments/setup.png)
 
 ## What is CavMD?
 
@@ -33,7 +33,7 @@ The implementation of CavMD relies on conventional MD packages. Currently, CavMD
 
 In general, i-pi provides an interface to separate nuclear force evaluation and the rest functions of nuclear dynamics. Currently, CavMD can be performed in i-pi using a new force evaluator: **ffcavphsocket**, which is operated in a similar way as using the original **ffsocket** evaluator but with additional parameters to control the degrees of freedom for cavity photons.
 
-Therefore, performing CavMD simulations is **very easy** in practice: the only background is to know how to perform conventional molecular dynamics outside the cavity with i-pi (which may take one hour to study from scratch), and the inside cavity results can be simulated by adding a few parameters. In short, it is user-friendly to all researchers. 
+Therefore, performing CavMD simulations is **very easy** in practice: the only background is to know how to perform conventional molecular dynamics outside the cavity with i-pi (which may take one hour to study from scratch), and the inside cavity results can be simulated by adding a few parameters. In short, it is user-friendly to all researchers.
 
 ## Folder structrucure
 

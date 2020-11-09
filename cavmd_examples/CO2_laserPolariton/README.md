@@ -2,7 +2,7 @@
 
 This is a step-by-step tutorial on how to reproduce all involved results published in:
 
-- Li, T. E., Nitzan, A., & Subotnik, J. E. (2020). Atomistic Simulation of Vibrational Polariton Enhanced Molecular Nonlinear Absorption. arXiv.
+- Li, T. E., Nitzan, A., & Subotnik, J. E. (2020). Atomistic Simulation of Vibrational Polariton Enhanced Molecular Nonlinear Absorption. [arXiv:2011.03192](https://arxiv.org/abs/2011.03192).
 
 All necessary input files and post-processing scripts are saved in the floders of the current path. NERSC users should be able to reproduce the results without modification, other linux cluster users may need to slightly modify the job submission scripts.
 
