@@ -1,0 +1,31 @@
+<simulation verbosity='high'>
+  <output prefix='minimize'>
+    <properties stride='20' filename='out_equlibrate'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}] </properties>
+    <trajectory filename='xc' stride='20' format='xyz'> x_centroid{angstrom} </trajectory>
+    <checkpoint filename='checkpoint' stride='20' overwrite='True'/>
+  </output>
+  <total_steps>300</total_steps>
+  <prng>
+    <seed>31415</seed>
+  </prng>
+  <ffsocket name='lammps' mode='unix' pbc='False'>
+    <address>mesitylene-pimd.1</address>
+  </ffsocket>
+  <system>
+    <initialize nbeads='1'>
+      <file mode='xyz' units='angstrom'> init_raw.xyz </file>
+      <cell mode='manual' units='angstrom'>
+	[24.292, 0, 0, 0, 24.292, 0, 0, 0, 24.292]
+      </cell>
+      <velocities mode='thermal' units='kelvin'> 300 </velocities>
+    </initialize>
+    <forces>
+      <force forcefield='lammps'> </force>
+    </forces>
+    <motion mode='minimize'>
+    </motion>
+    <ensemble>
+      <temperature units='kelvin'> 300 </temperature>
+    </ensemble>
+  </system>
+</simulation>

@@ -1,0 +1,7 @@
+Please run the following to predict the VVAC of a GLE thermostat:
+prefix=gle01
+../../../../bin/i-pi-gleacf -a conv -ifacf simulation-svr.vvac -ixml input.xml -mr 5000 -S 1 -ts 41.341373 -op svrto${prefix}
+
+Please run the following to extract the microcanonical vvac out of a vvac affected by a GLE thermostat:
+prefix=gle01
+../../../../bin/i-pi-gleacf -a deconv -ifacf simulation-${prefix}.vvac -ixml input.xml -mr 5000 -s 1 -ts 41.341373 -op ${prefix}2svr -dp 500 50

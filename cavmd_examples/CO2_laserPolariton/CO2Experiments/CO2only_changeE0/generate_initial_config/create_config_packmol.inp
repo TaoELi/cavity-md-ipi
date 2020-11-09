@@ -1,0 +1,14 @@
+#
+# Pure liquid Ph-Me3
+#
+
+tolerance 2.5
+filetype xyz
+output init_raw.xyz
+
+structure co2.xyz
+  number 216
+  inside box 0. 0. 0. 24.292 24.292 24.292
+end structure
+
+
