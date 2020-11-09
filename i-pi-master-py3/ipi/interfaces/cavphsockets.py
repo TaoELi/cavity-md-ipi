@@ -352,14 +352,15 @@ class Driver(DriverSocket):
             self.pos_no_photon = self.pos[:-3*self.photons.nphoton]
             self.photons.update_pos(self.pos[-3*self.photons.nphoton:])
             self.dipole.update_pos(self.pos_no_photon.copy())
-        # Apply ABC to the pos_no_photon
-        self.pos_no_photon = dstrip(self.pos_no_photon).copy()
-        s = dstrip(self.pos_no_photon).copy()
-        s.shape = (len(self.pos_no_photon) // 3, 3)
-        s = np.dot(h_ih[1], s.T)
-        s = s - np.round(s)
-        s = np.dot(h_ih[0], s).T
-        self.pos_no_photon = s.reshape((len(s) * 3))
+        if self.dipole.nuclei_force_use_pbc:
+            # Apply ABC to the pos_no_photon
+            self.pos_no_photon = dstrip(self.pos_no_photon).copy()
+            s = dstrip(self.pos_no_photon).copy()
+            s.shape = (len(self.pos_no_photon) // 3, 3)
+            s = np.dot(h_ih[1], s.T)
+            s = s - np.round(s)
+            s = np.dot(h_ih[0], s).T
+            self.pos_no_photon = s.reshape((len(s) * 3))
         # End of Tao's modification
 
         if (self.status & Status.Ready):

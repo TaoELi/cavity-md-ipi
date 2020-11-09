@@ -72,6 +72,10 @@ class dipole:
                 else:
                     self.cw_params[1] *= 2.998e-5 * 2.0 * np.pi # unit converse from cm-1 to 2pi*fs-1
                     self.cw_params[1] = np.array([self.cw_params[1]])                # cw_atoms = [1, 2, 3]
+                # Try to determine if is random phase
+                if self.cw_params[2] == "RANDOM_PHASE":
+                    self.cw_params[2] = np.random.rand() * 2.0 * np.pi
+                    print("## Random phase is set as %.4f ##" %(self.cw_params[2]) )
                 self.cw_atoms = np.array(data.get("cw_atoms", [0, 1, 2]), dtype=np.int32)
                 self.cw_all_atoms = False
                 if data.get("cw_atoms", [0, 1, 2]) == [-1]:
@@ -99,6 +103,8 @@ class dipole:
                 else:
                     print("## Having not defined method to update nuclear charge (can be a shell script)!!! ##")
                     exit(1)
+            # 2020-10-03 Choose to apply PBC or not to the external package
+            self.nuclei_force_use_pbc = data.get("nuclei_force_use_pbc", True)
 
     def add_pulse(self, mf):
         if self.have_incoming_pulse:
