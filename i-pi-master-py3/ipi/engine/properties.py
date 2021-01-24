@@ -665,6 +665,13 @@ class Properties(dobject):
         "usr_defined_quantity": {"dimension": "energy",
                    "help": "calculate a usr defined function from usr_defined_quantity.py",
                     "longhelp": """TBD.""",
+                    'func': self.get_usr_defined_quantity},
+        # End of Tao E. Li's modification
+        # Created by Tao E. Li @ 2021/01/14
+        "usr_defined_quantities": {"dimension": "energy",
+                   "help": "calculate several usr defined quantities from usr_defined_quantity.py",
+                    "longhelp": """TBD.""",
+                    "size": 2,
                     'func': self.get_usr_defined_quantity}
         # End of Tao E. Li's modification
         }
@@ -2158,7 +2165,7 @@ class Properties(dobject):
         sys.path.append(local_path)
         #try:
         from usr_defined_function import usr_defined_function
-        return usr_defined_function(self.beads.pc, self.beads.qc, self.beads.m)
+        return usr_defined_function(np.copy(self.beads.pc), np.copy(self.beads.qc), np.copy(self.beads.m))
         #except:
         #    print("Current folder is", local_path)
         #    print("Not found usr_defined_function.py --> usr_defined_function(pc, qc, mass) in file")
