@@ -12,9 +12,9 @@ This approach is still under development and more features will be reported and 
 
 Experimentalists have found that many molecular properties can be significantly modified under VSC or V-USC. Two of the most astonishing findings are:
 
-- modification of ground-state chemical reaction rates and chemical selectivity under thermal conditions [(check here)](https://doi.org/10.1126/science.aau7742);
+- Modification of ground-state chemical reaction rates and chemical selectivity under thermal conditions [(check here)](https://doi.org/10.1126/science.aau7742);
 
-- acceleration of intermolecular vibrational energy transfer rate between different molecular species under laser pumping [(check here)](https://doi.org/10.1126/science.aba3544).
+- Acceleration of intermolecular vibrational energy transfer rate between different molecular species under laser pumping [(check here)](https://doi.org/10.1126/science.aba3544).
 
 These experimental findings suggest that VSC or V-USC might provide a new means to control chemistry *without additional energy input*, which could have a direct impact on both academia or industry. However, there is no good theoretical approach to describe these intriguing experimental findings. Therefore, CavMD is proposed.
 
@@ -22,7 +22,7 @@ These experimental findings suggest that VSC or V-USC might provide a new means 
 
 - Computation of Rabi splitting in the IR spectrum for realistic molecular systems from VSC to V-USC without fitting experimental parameters. For more details, see [publication](https://doi.org/10.1073/pnas.2009272117) and the corresponding data in folder cavmd_examples/water_VUSC.
 
-- Description of polariton relaxation and polariton-enhanced multiphoton absorption. See [arXiv:2011.03192](https://arxiv.org/abs/2011.03192) for details.
+- Description of polariton relaxation and polariton-enhanced multiphoton absorption after an external laser pumping of the polaritons. See [publication](https://doi.org/10.1063/5.0037623) for details.
 
 Other features including cavity catalytic effects are under development and will be released soon.
 
@@ -52,8 +52,6 @@ Please check folder "cavmd_examples/" for step-by-step introductions.
 If you find CavMD useful for your research, please cite:
 
 - Li, T. E., Subotnik, J. E., & Nitzan, A. (2020). Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. Proceedings of the National Academy of Sciences, 117(31), 18324–18331. https://doi.org/10.1073/pnas.2009272117
-
-- Li, T. E., Nitzan, A., & Subotnik, J. E. (2020). Atomistic Simulation of Vibrational Polariton Enhanced Molecular Nonlinear Absorption. [arXiv:2011.03192](https://arxiv.org/abs/2011.03192).
 
 If you directly use the provided code in your simulations, please also cite the original [i-pi](http://ipi-code.org/) package which provides a fancy and user-friendly interface for simulating nuclear dynamics:
 
