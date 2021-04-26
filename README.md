@@ -24,7 +24,7 @@ These experimental findings suggest that VSC or V-USC might provide a new means 
 
 - Description of polariton relaxation and polariton-enhanced multiphoton absorption after an external laser pumping of the polaritons. See [publication](https://doi.org/10.1063/5.0037623) for details and the corresponding data in folder cavmd_examples/CO2_laserPolariton/.
 
-- Description of collective VSC effects on vibrational relaxation and energy transfer without external polariton pumping. See [preprint] for details and the corresponding data in folder cavmd_examples/CO2_vib_relaxation/.
+- Description of collective VSC effects on vibrational relaxation and energy transfer without external polariton pumping. See [preprint](https://arxiv.org/abs/2103.06749) for details and the corresponding data in folder cavmd_examples/CO2_vib_relaxation/.
 
 Other features including cavity catalytic effects are under development and will be released soon.
 
@@ -61,8 +61,8 @@ If you directly use the provided code in your simulations, please also cite the 
 
 ## A complete list of papers using CavMD:
 
-- Li, T. E., Subotnik, J. E., Nitzan, A. Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. Proceedings of the National Academy of Sciences. 2020, 117(31), 18324–18331. https://doi.org/10.1073/pnas.2009272117
+- Li, T. E., Subotnik, J. E., Nitzan, A. Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. [Proceedings of the National Academy of Sciences. 2020, 117(31), 18324–18331](https://doi.org/10.1073/pnas.2009272117). 
 
 - Li, T. E.; Nitzan, A.; Subotnik, J. E. Cavity Molecular Dynamics Simulations of Vibrational Polariton-Enhanced Molecular Nonlinear Absorption. [J. Chem. Phys. 2021, 154 (9), 094124](https://doi.org/10.1063/5.0037623).
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. arXiv. 2021.
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. [arXiv. 2021](https://arxiv.org/abs/2103.06749). 
