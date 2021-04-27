@@ -4,29 +4,25 @@
 
 ## What is CavMD?
 
-CavMD is an approach to simulate coupled photon-nuclear dynamics for realistic molecules in optical microcavities and to explore the possible cavity modifications of molecular properties. It aims to accurately describe vibrational strong (VSC) or ultrastrong (V-USC) coupling, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum.
+CavMD is an approach to classically simulate coupled photon-nuclear dynamics for realistic molecules in optical microcavities and to explore the possible cavity modifications on molecular properties. This approach is a natural extension of the coupled oscillator model, i.e., both a caivty photon and a molecular bright mode are described by harmonic oscillators. It aims to accurately describe vibrational strong (VSC) or ultrastrong (V-USC) coupling, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum. Nuclear and photonic quantum effects can be further included in CavMD by path-integral treatments (not reported yet). 
 
 This approach is still under development and more features will be reported and updated in the near future.
 
 ## Why use CavMD?
 
-Experimentalists have found that many molecular properties can be significantly modified under VSC or V-USC. Two of the most astonishing findings are:
+Experiments have indicated that many molecular properties can be significantly modified under VSC or V-USC, e.g., (i) modification of ground-state chemical reaction rates and chemical selectivity under thermal conditions [(check here)](https://doi.org/10.1126/science.aau7742); and (ii) acceleration of intermolecular vibrational energy transfer rate between different molecular species under laser pumping [(check here)](https://doi.org/10.1126/science.aba3544).
 
-- Modification of ground-state chemical reaction rates and chemical selectivity under thermal conditions [(check here)](https://doi.org/10.1126/science.aau7742);
-
-- Acceleration of intermolecular vibrational energy transfer rate between different molecular species under laser pumping [(check here)](https://doi.org/10.1126/science.aba3544).
-
-These experimental findings suggest that VSC or V-USC might provide a new means to control chemistry *without additional energy input*, which could have a direct impact on both academia or industry. However, there is no good theoretical approach to describe these intriguing experimental findings. Therefore, CavMD is proposed.
+These experimental findings suggest that VSC or V-USC might provide a new means to control chemical or physical processes, which could have a direct impact on both academia or industry. However, there is no good theoretical approach to describe these intriguing experimental findings. Especially, when realistic molecules are studied on top of simplified quantum models, the adjustable parameters (e.g., the magnitude of intermolecular interactions, static disorder, molecular anharmonicity, an proper inclusion of temperature effect, etc.) can become to large to handle, and an improper change of these parameters could nonphysical results. Therefore, CavMD is proposed.
 
 ## What can CavMD do NOW?
 
-Users can freely use CavMD to study, for an arbitrary molecular system (with a given classical force field), how poalritonic dynamics are altered by (i) cavity loss, (ii) vibrational relaxation rates (to ground state), (iii) poalritonic energy transfer (dephasing) to vibrational dark modes, (iv) molecular anharmonicity,  (v) molecular density, (vi) temperature, etc. and how the inclusion of polaritons can alter local or invididual molecular properties. There are a lot of possibilities which could be investigated, examples include:
+Users can freely use CavMD to study, for an arbitrary molecular system (with a given classical force field), how polaritonic dynamics are altered by (i) cavity loss, (ii) vibrational relaxation rates (to ground state), (iii) poalritonic energy transfer (dephasing) to vibrational dark modes, (iv) molecular anharmonicity,  (v) molecular density, (vi) temperature, etc., and how the formation of polaritons can alter local or invididual molecular properties (which are mostly composed of vibrational dark modes). There are a lot of possibilities which could be investigated, examples include:
 
 - Computation of Rabi splitting in the IR spectrum for realistic molecular systems from VSC to V-USC without fitting experimental parameters. For more details, see [publication](https://doi.org/10.1073/pnas.2009272117) and the corresponding data in folder cavmd_examples/water_VUSC/.
 
 - Description of polariton relaxation and polariton-enhanced multiphoton absorption after an external laser pumping of the polaritons. See [publication](https://doi.org/10.1063/5.0037623) for details and the corresponding data in folder cavmd_examples/CO2_laserPolariton/.
 
-- Description of collective VSC effects on vibrational relaxation and energy transfer without external polariton pumping. See [preprint](https://arxiv.org/abs/2103.06749) for details and the corresponding data in folder cavmd_examples/CO2_vib_relaxation/.
+- Description of collective VSC effects on vibrational relaxation and energy transfer for a few hot molecules immersed in a molecular thermal bath. See [preprint](https://arxiv.org/abs/2103.06749) for details and the corresponding data in folder cavmd_examples/CO2_vib_relaxation/.
 
 Other features including cavity catalytic effects are under development and will be released soon.
 
