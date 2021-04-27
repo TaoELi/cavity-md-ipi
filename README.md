@@ -20,6 +20,8 @@ These experimental findings suggest that VSC or V-USC might provide a new means 
 
 ## What can CavMD do NOW?
 
+Users can freely use CavMD to study, for an arbitrary molecular system (with a given classical force field), how poalritonic dynamics are altered by (i) cavity loss, (ii) vibrational relaxation rates (to ground state), (iii) poalritonic energy transfer (dephasing) to vibrational dark modes, (iv) molecular anharmonicity,  (v) molecular density, (vi) temperature, etc. and how the inclusion of polaritons can alter local or invididual molecular properties. There are a lot of possibilities which could be investigated, examples include:
+
 - Computation of Rabi splitting in the IR spectrum for realistic molecular systems from VSC to V-USC without fitting experimental parameters. For more details, see [publication](https://doi.org/10.1073/pnas.2009272117) and the corresponding data in folder cavmd_examples/water_VUSC/.
 
 - Description of polariton relaxation and polariton-enhanced multiphoton absorption after an external laser pumping of the polaritons. See [publication](https://doi.org/10.1063/5.0037623) for details and the corresponding data in folder cavmd_examples/CO2_laserPolariton/.
