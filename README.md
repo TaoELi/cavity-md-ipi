@@ -4,7 +4,7 @@
 
 ## What is CavMD?
 
-CavMD is an approach to classically simulate coupled photon-nuclear dynamics for realistic molecules in optical microcavities and to explore the possible cavity modifications on molecular properties. This approach is a natural extension of the coupled oscillator model, i.e., both a caivty photon and a molecular bright mode are described by harmonic oscillators. It aims to accurately describe vibrational strong (VSC) or ultrastrong (V-USC) coupling, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum. Nuclear and photonic quantum effects can be further included in CavMD by path-integral treatments (not reported yet). 
+CavMD is an approach to classically simulate coupled photon-nuclear dynamics for realistic molecules in optical microcavities and to explore the possible cavity modifications on molecular properties. This approach is a natural extension of the coupled oscillator model, i.e., both a caivty photon and a molecular bright mode are described by harmonic oscillators. It aims to accurately describe vibrational strong (VSC) or ultrastrong (V-USC) coupling, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum. Nuclear and photonic quantum effects can be further included in CavMD by path-integral treatments (not reported yet).
 
 This approach is still under development and more features will be reported and updated in the near future.
 
@@ -22,7 +22,7 @@ Users can freely use CavMD to study, for an arbitrary molecular system (with a g
 
 - Description of polariton relaxation and polariton-enhanced multiphoton absorption after an external laser pumping of the polaritons. See [publication](https://doi.org/10.1063/5.0037623) for details and the corresponding data in folder cavmd_examples/CO2_laserPolariton/.
 
-- Description of collective VSC effects on vibrational relaxation and energy transfer for a few hot molecules immersed in a molecular thermal bath. See [preprint](https://arxiv.org/abs/2103.06749) for details and the corresponding data in folder cavmd_examples/CO2_vib_relaxation/.
+- Description of collective VSC effects on vibrational relaxation and energy transfer for a few hot molecules immersed in a molecular thermal bath. See [publication](https://doi.org/10.1002/ange.202103920) for details and the corresponding data in folder cavmd_examples/CO2_vib_relaxation/.
 
 - An important prediction: Under suitable resonant conditions, exciting a vibrational polariton of the solvent molecules provides an energy-efficient approach to strongly excite the solute molecules to high vibrational states. This finding could potentially be used to catalyze ground-state chemical reactions in liquid phase with an IR pulse, which remains difficult to achieve outside a cavity.  See [preprint](https://arxiv.org/abs/2104.15121) for details and the corresponding data in folder cavmd_examples/selective_excite_solute/.
 
@@ -65,6 +65,6 @@ If you directly use the provided code in your simulations, please also cite the 
 
 - Li, T. E.; Nitzan, A.; Subotnik, J. E. Cavity Molecular Dynamics Simulations of Vibrational Polariton-Enhanced Molecular Nonlinear Absorption. [J. Chem. Phys. 2021, 154 (9), 094124](https://doi.org/10.1063/5.0037623).
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. [arXiv. 2021](https://arxiv.org/abs/2103.06749).
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. [Angew. Chem. Int. Ed. 2021](https://doi.org/10.1002/ange.202103920).
 
 - Li, T. E.; Nitzan, A.; Subotnik, J. E. Energy-efficient pathway for selectively exciting solute molecules to high vibrational states via solvent vibration-polariton pumping. [arXiv. 2021](https://arxiv.org/abs/2104.15121).
