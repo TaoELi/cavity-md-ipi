@@ -422,6 +422,12 @@ class Driver(DriverSocket):
         mf = np.zeros(3 * mlen, np.float64)
         mf = self.recvall(mf)
 
+        # 2021-07-09 Modified by Tao E. Li
+        if self.apply_photon and self.dipole.update_charge:
+            mcharge = np.zeros(mlen, np.float64)
+            mcharge = self.recvall(mcharge)
+        # END of modification 2021-07-09
+
         mvir = np.zeros((3, 3), np.float64)
         mvir = self.recvall(mvir)
 
@@ -449,16 +455,15 @@ class Driver(DriverSocket):
             Ex = self.photons.obtain_Ex()
             Ey = self.photons.obtain_Ey()
 
-            #dipole_x_tot = self.dipole.calc_dipoles_x_tot()
-            #dipole_y_tot = self.dipole.calc_dipoles_y_tot()
+            # try to update charges
+            if self.dipole.update_charge:
+                self.dipole.update_charges(mcharge)
             dipole_x_tot, dipole_y_tot, dmudx, dmudy = self.dipole.calc_dipole_x_y_and_derivatives()
 
             mu_int = Ex * dipole_x_tot + Ey * dipole_y_tot
             mu += mu_photon + mu_int + 0.5 * self.photons.coeff_self * (dipole_x_tot**2 + dipole_y_tot**2)
 
             # 2. Modify nuclear force
-            #mf[0::3] += - (Ex + self.photons.coeff_self * dipole_x_tot)  * self.dipole.calc_dmudx()
-            #mf[1::3] += - (Ey + self.photons.coeff_self * dipole_y_tot)  * self.dipole.calc_dmudy()
             mf[0::3] += - (Ex + self.photons.coeff_self * dipole_x_tot)  * dmudx
             mf[1::3] += - (Ey + self.photons.coeff_self * dipole_y_tot)  * dmudy
 
