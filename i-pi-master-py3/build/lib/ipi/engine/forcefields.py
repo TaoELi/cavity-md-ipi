@@ -22,6 +22,9 @@ from ipi.utils.depend import dobject
 from ipi.utils.depend import dstrip
 from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal, unit_to_user, UnitMap
+from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
+from ipi.interfaces.cavph2dsockets import InterfaceCavPh2DSocket
+from ipi.interfaces.photons import photons
 
 try:
     import plumed
@@ -754,3 +757,328 @@ class FFsGDML(ForceField):
         r["result"] = [E[0] * self.kcalmol_to_hartree, F.flatten() * self.kcalmolang_to_hartreebohr, np.zeros((3, 3), float), ""]
         r["status"] = "Done"
         r["t_finished"] = time.time()
+
+class FFCavPhSocket(ForceField):
+
+    """
+    Socket for dealing with cavity photons interacting with molecules by
+    Tao E. Li @ 2020-09-28
+    Check https://doi.org/10.1073/pnas.2009272117 for details
+
+    Interface between the PIMD code and a socket for a single replica.
+
+    Deals with an individual replica of the system, obtaining the potential
+    force and virial appropriate to this system. Deals with the distribution of
+    jobs to the interface.
+
+    Attributes:
+        socket: The interface object which contains the socket through which
+            communication between the forcefield and the driver is done.
+    """
+
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=False,
+                 active=np.array([-1]), threaded=True, interface=None):
+        """Initialises FFCavPhSocket.
+
+        Args:
+           latency: The number of seconds the socket will wait before updating
+              the client list.
+           name: The name of the forcefield.
+           pars: A dictionary used to initialize the forcefield, if required.
+              Of the form {'name1': value1, 'name2': value2, ... }.
+           dopbc: Decides whether or not to apply the periodic boundary conditions
+              before sending the positions to the client code.
+           interface: The object used to create the socket used to interact
+              with the client codes.
+        """
+
+        # a socket to the communication library is created or linked
+        super(FFCavPhSocket, self).__init__(latency, name, pars, dopbc, active, threaded)
+        if interface is None:
+            self.socket = InterfaceCavPhSocket()
+        else:
+            self.socket = interface
+        self.socket.requests = self.requests
+
+    def poll(self):
+        """Function to check the status of the client calculations."""
+
+        self.socket.poll()
+
+    def start(self):
+        """Spawns a new thread."""
+
+        self.socket.open()
+        super(FFCavPhSocket, self).start()
+
+    def stop(self):
+        """Closes the socket and the thread."""
+
+        super(FFCavPhSocket, self).stop()
+        if self._thread is not None:
+            # must wait until loop has ended before closing the socket
+            self._thread.join()
+        self.socket.close()
+
+class FFCavPh2DSocket(ForceField):
+
+    """
+    Socket for dealing with cavity photons interacting with molecules by
+    Tao E. Li @ 2020-09-28
+    Check https://doi.org/10.1073/pnas.2009272117 for details
+
+    Interface between the PIMD code and a socket for a single replica.
+
+    Deals with an individual replica of the system, obtaining the potential
+    force and virial appropriate to this system. Deals with the distribution of
+    jobs to the interface.
+
+    Attributes:
+        socket: The interface object which contains the socket through which
+            communication between the forcefield and the driver is done.
+    """
+
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=False,
+                 active=np.array([-1]), threaded=True, interface=None):
+        """Initialises FFCavPh2DSocket.
+
+        Args:
+           latency: The number of seconds the socket will wait before updating
+              the client list.
+           name: The name of the forcefield.
+           pars: A dictionary used to initialize the forcefield, if required.
+              Of the form {'name1': value1, 'name2': value2, ... }.
+           dopbc: Decides whether or not to apply the periodic boundary conditions
+              before sending the positions to the client code.
+           interface: The object used to create the socket used to interact
+              with the client codes.
+        """
+
+        # a socket to the communication library is created or linked
+        super(FFCavPh2DSocket, self).__init__(latency, name, pars, dopbc, active, threaded)
+        if interface is None:
+            self.socket = InterfaceCavPh2DSocket()
+        else:
+            self.socket = interface
+        self.socket.requests = self.requests
+
+    def poll(self):
+        """Function to check the status of the client calculations."""
+
+        self.socket.poll()
+
+    def start(self):
+        """Spawns a new thread."""
+
+        self.socket.open()
+        super(FFCavPh2DSocket, self).start()
+
+    def stop(self):
+        """Closes the socket and the thread."""
+
+        super(FFCavPh2DSocket, self).stop()
+        if self._thread is not None:
+            # must wait until loop has ended before closing the socket
+            self._thread.join()
+        self.socket.close()
+
+class FFCavPh(ForceField):
+
+    """Full pythonic CavPh interference
+
+    Computes a forcefield necessary for vibrational strong coupling simulation
+
+    Attributes:
+       parameters: A dictionary of the parameters used by the driver. Of the
+          form {'name': value}.
+       requests: During the force calculation step this holds a dictionary
+          containing the relevant data for determining the progress of the step.
+          Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                       'status': status, 'result': result, 'id': bead id,
+                       'start': starting time}.
+    """
+
+    def __init__(self, input_xyz_filename="", grad_method='', output_file='',
+                memory_usage="", numpy_memory=2, nthread=1,
+                latency=1.0, name="", pars=None, dopbc=False, threaded=False):
+        """Initialises FFCavPh.
+
+        Args:
+           pars: Optional dictionary, giving the parameters needed by the driver.
+        """
+
+        # a socket to the communication library is created or linked
+        # NEVER DO PBC -- forces here are computed without.
+        super(FFCavPh, self).__init__(latency, name, pars, dopbc=False)
+
+        self.Debye2AU = 1.0 /2.54174623
+        # Initialize for cavity photon related parts
+        self.photons = photons()
+        self.apply_photon = self.photons.apply_photon
+
+        # preset parameters
+        self.input_xyz_filename = input_xyz_filename
+        self.grad_method = grad_method
+        self.output_file = output_file
+        self.memory_usage = memory_usage
+        self.numpy_memory = numpy_memory
+        self.nthread = nthread
+        print("Ab initio code will read initial config from", self.input_xyz_filename)
+        print("Theory level", self.grad_method)
+        print("Raw file during ab initio calculation is generated to", self.output_file)
+        print("Memory allocated to ab initio calculation is %s" %self.memory_usage)
+        print("Memory allocated to numpy interface is %d Gb" %self.numpy_memory)
+        print("Number of thread for ab initio calculation is %d" %self.nthread)
+        # end of preset parameters
+
+        self.init_nuclear_str = self.initialize_from_xyz(filename=self.input_xyz_filename)
+
+        if name == "psi4":
+            print("Using %s ab initio force field to do calculation" %name)
+            # Initialize psi4 object
+            try:
+                import psi4
+            except:
+                raise ImportError("!!!Please install psi4 and psi4numpy interface!!!")
+            psi4.set_memory(self.memory_usage)
+            numpy_memory = self.numpy_memory
+            psi4.set_num_threads(self.nthread)
+            psi4.core.set_output_file(self.output_file, False)
+            self.molec = psi4.geometry(self.init_nuclear_str)
+        else:
+            raise ValueError("%s pythonic force field is unavailable currently" %name)
+
+    def initialize_from_xyz(self, filename):
+        if self.apply_photon:
+            thefile = open(filename, 'r')
+            ntot = int(thefile.readline())
+            nat = ntot - self.photons.nphoton
+            print("Now CavPh force field will deal with %d atoms" %nat)
+            thefile.readline()
+            # Remove several lines for photonic DoFs
+            str1 = ""
+            for i in range(nat):
+                str1 += thefile.readline()
+            print("Atomic string is")
+            print(str1)
+            return str1
+        else:
+            thefile = open(filename, 'r')
+            nat = int(thefile.readline())
+            print("CavPh force field will deal with %d atoms" %nat)
+            thefile.readline()
+            str1 = thefile.read()
+            print("Atomic string is")
+            print(str1)
+            return str1
+
+    def poll(self):
+        """ Polls the forcefield checking if there are requests that should
+        be answered, and if necessary evaluates the associated forces and energy. """
+
+        # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
+        with self._threadlock:
+            for r in self.requests:
+                if r["status"] == "Queued":
+                    r["status"] = "Running"
+                    self.evaluate(r)
+
+    def evaluate(self, r):
+        """ Evaluator for FFCavPh"""
+        # 1. Obtain the total (nuclear + photonic) position arrary
+        q = r["pos"]
+
+        if self.apply_photon:
+            # 2.1 Separate nuclear and photonic positions
+            self.pos_no_photon = q[:-3*self.photons.nphoton]
+            self.photons.update_pos(q[-3*self.photons.nphoton:])
+
+            # 2.2 For molecular part, evaluate forces and dipole derivatives
+            e, mf, dipole_x_tot, dipole_y_tot, dipder_splitted = self.calc_bare_nuclear_force_dipder(q)
+
+            # 2.3 Evaluate photonic energy (the same as FFCavPhSocket)
+            e_photon = self.photons.obtain_potential()
+            Ex = self.photons.obtain_Ex()
+            Ey = self.photons.obtain_Ey()
+
+            e_int = Ex * dipole_x_tot + Ey * dipole_y_tot
+            e += e_photon + e_int + 0.5 * self.photons.coeff_self * (dipole_x_tot**2 + dipole_y_tot**2)
+
+            # 2.4. Modify nuclear force [This part is very different from FFCavPhSocket classical simulation]
+            # classical code
+            #mf[0::3] += - (Ex + self.photons.coeff_self * dipole_x_tot)  * dmudx
+            #mf[1::3] += - (Ey + self.photons.coeff_self * dipole_y_tot)  * dmudy
+            # quantum code has cross terms dmu_i/dj (i, j=x,y,z)
+            dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz = dipder_splitted
+            ph_x_coeff = Ex + self.photons.coeff_self * dipole_x_tot
+            ph_y_coeff = Ey + self.photons.coeff_self * dipole_y_tot
+            mf[0::3] += - ph_x_coeff  * dmuxdx - ph_y_coeff  * dmuydx
+            mf[1::3] += - ph_x_coeff  * dmuxdy - ph_y_coeff  * dmuydy
+            mf[2::3] += - ph_x_coeff  * dmuxdz - ph_y_coeff  * dmuydz
+
+            # 2.5. Calculate photonic force
+            f_photon = self.photons.calc_photon_force(dipole_x_tot, dipole_y_tot)
+
+            # 2.6. Merge the two forces
+            mf = np.concatenate((mf[:], f_photon[:]))
+        else:
+            # 2. Performing conventional energy and force evaluation
+            e, mf = self.calc_bare_nuclear_force(q)
+
+        # 3. Finally, update energy and forces
+        r["result"] = [e, mf, np.zeros((3, 3), float), ""]
+        r["status"] = "Done"
+        r["t_finished"] = time.time()
+
+    def calc_bare_nuclear_force(self, q):
+        if self.name == "psi4":
+            import psi4
+            psi4.set_num_threads(self.nthread)
+            # update positions for molecules
+            self.molec.set_geometry(psi4.core.Matrix.from_array(q.reshape((-1, 3))))
+            E, wfn = psi4.energy(self.grad_method, return_wfn=True, molecule=self.molec)
+            g, wfn2 = psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec, return_wfn=True)
+            force = -np.asarray(g)
+            return E, force.flatten()
+
+    def calc_bare_nuclear_force_dipder(self, q):
+        if self.name == "psi4":
+            import psi4
+            psi4.set_num_threads(self.nthread)
+            # update positions for molecules
+            self.molec.set_geometry(psi4.core.Matrix.from_array(q.reshape((-1, 3))))
+            E, wfn = psi4.energy(self.grad_method, return_wfn=True, molecule=self.molec)
+            # evaluate total dipole moment
+            mux = psi4.core.variable('SCF DIPOLE X') * self.Debye2AU
+            muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
+            force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
+            H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
+            dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
+            # importantly, I need to split diper array to the desired ones
+            dmuxdx = dipder[0::3,0]
+            dmuydx = dipder[0::3,1]
+            dmuxdy = dipder[1::3,0]
+            dmuydy = dipder[1::3,1]
+            dmuxdz = dipder[2::3,0]
+            dmuydz = dipder[2::3,1]
+            dipder_splitted = (dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz)
+
+            # check the validity of the output values [be very careful]
+            #print("dipole x", mux)
+            #print("dipole y", muy)
+            #print("original dipder array")
+            #print(dipder)
+            #print("dmuxdx")
+            #print(dmuxdx)
+            #print("dmuydx")
+            #print(dmuydx)
+            #print("dmuxdy")
+            #print(dmuxdy)
+            #print("dmuydy")
+            #print(dmuydy)
+            #print("dmuxdz")
+            #print(dmuxdz)
+            #print("dmuydz")
+            #print(dmuydz)
+
+            return E, force.flatten(), mux, muy, dipder_splitted

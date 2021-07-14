@@ -660,7 +660,20 @@ class Properties(dobject):
                           of atoms. The 5 numbers output are 1) the average over the excess potential energy for
                           an isotope atom substitution <sc>, 2) the average of the squares of the excess potential
                           energy <sc**2>, and 3) the average of the exponential of excess potential energy
-                          <exp(-beta*sc)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term"""}
+                          <exp(-beta*sc)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term"""},
+        # Created by Tao E. Li @ 2020/11/24
+        "usr_defined_quantity": {"dimension": "energy",
+                   "help": "calculate a usr defined function from usr_defined_quantity.py",
+                    "longhelp": """TBD.""",
+                    'func': self.get_usr_defined_quantity},
+        # End of Tao E. Li's modification
+        # Created by Tao E. Li @ 2021/01/14
+        "usr_defined_quantities": {"dimension": "energy",
+                   "help": "calculate several usr defined quantities from usr_defined_quantity.py",
+                    "longhelp": """TBD.""",
+                    "size": 2,
+                    'func': self.get_usr_defined_quantity}
+        # End of Tao E. Li's modification
         }
 
     def bind(self, system):
@@ -2144,6 +2157,20 @@ class Properties(dobject):
 
         return ti
 
+# Created by Tao E. Li at 2020/11/24
+    def get_usr_defined_quantity(self):
+        import os
+        import sys
+        local_path = os.getcwd()
+        sys.path.append(local_path)
+        #try:
+        from usr_defined_function import usr_defined_function
+        return usr_defined_function(np.copy(self.beads.pc), np.copy(self.beads.qc), np.copy(self.beads.m))
+        #except:
+        #    print("Current folder is", local_path)
+        #    print("Not found usr_defined_function.py --> usr_defined_function(pc, qc, mass) in file")
+        #    return 0.0
+# End by Tao E. Li at 2020/11/24
 
 class Trajectories(dobject):
 

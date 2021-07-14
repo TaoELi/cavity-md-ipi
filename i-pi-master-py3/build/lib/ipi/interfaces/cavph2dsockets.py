@@ -22,7 +22,7 @@ from ipi.utils.messages import verbosity, warning, info
 from ipi.utils.softexit import softexit
 
 
-__all__ = ["InterfaceSocket"]
+__all__ = ["InterfaceCavPh2DSocket"]
 
 
 HDRLEN = 12
@@ -168,12 +168,12 @@ class DriverSocket(socket.socket):
                     raise socket.timeout  # if this keeps returning no data, we are in trouble....
                 self._buf[bpos : bpos + len(bpart)] = np.fromstring(bpart, np.byte)
             except socket.timeout:
-                # warning(" @SOCKET:   Timeout in recvall, trying again!", verbosity.low)
+                # warning(" @CavPh2DSOCKET:   Timeout in recvall, trying again!", verbosity.low)
                 timeout = True
                 ntimeout += 1
                 if ntimeout > NTIMEOUT:
                     warning(
-                        " @SOCKET:  Couldn't receive within %5d attempts. Time to give up!"
+                        " @CavPh2DSOCKET:  Couldn't receive within %5d attempts. Time to give up!"
                         % (NTIMEOUT),
                         verbosity.low,
                     )
@@ -188,7 +188,7 @@ class DriverSocket(socket.socket):
             #   bpart = 1
             #   bpart = self.recv_into(self._buf[bpos:], blen-bpos)
             # except socket.timeout:
-            #   print " @SOCKET:   Timeout in status recvall, trying again!"
+            #   print " @CavPh2DSOCKET:   Timeout in status recvall, trying again!"
             #   timeout = True
             #   pass
             # if (not timeout and bpart == 0):
@@ -270,11 +270,11 @@ class Driver(DriverSocket):
             reply = self.recv(HDRLEN)
             self.waitstatus = False  # got some kind of reply
         except socket.timeout:
-            warning(" @SOCKET:   Timeout in status recv!", verbosity.debug)
+            warning(" @CavPh2DSOCKET:   Timeout in status recv!", verbosity.debug)
             return Status.Up | Status.Busy | Status.Timeout
         except:
             warning(
-                " @SOCKET:   Other socket exception. Disconnecting client and trying to carry on.",
+                " @CavPh2DSOCKET:   Other socket exception. Disconnecting client and trying to carry on.",
                 verbosity.debug,
             )
             return Status.Disconnected
@@ -288,7 +288,7 @@ class Driver(DriverSocket):
         elif reply == Message("havedata"):
             return Status.Up | Status.HasData
         else:
-            warning(" @SOCKET:    Unrecognized reply: " + str(reply), verbosity.low)
+            warning(" @CavPh2DSOCKET:    Unrecognized reply: " + str(reply), verbosity.low)
             return Status.Up
 
     def get_status(self):
@@ -369,12 +369,12 @@ class Driver(DriverSocket):
                     reply = self.recv_msg()
                 except socket.timeout:
                     warning(
-                        " @SOCKET:   Timeout in getforce, trying again!", verbosity.low
+                        " @CavPh2DSOCKET:   Timeout in getforce, trying again!", verbosity.low
                     )
                     continue
                 except:
                     warning(
-                        " @SOCKET:   Error while receiving message: %s" % (reply),
+                        " @CavPh2DSOCKET:   Error while receiving message: %s" % (reply),
                         verbosity.low,
                     )
                     raise Disconnected()
@@ -382,7 +382,7 @@ class Driver(DriverSocket):
                     break
                 else:
                     warning(
-                        " @SOCKET:   Unexpected getforce reply: %s" % (reply),
+                        " @CavPh2DSOCKET:   Unexpected getforce reply: %s" % (reply),
                         verbosity.low,
                     )
                 if reply == "":
@@ -424,7 +424,7 @@ class Driver(DriverSocket):
 
         if not self.status & Status.Up:
             warning(
-                " @SOCKET:   Inconsistent client state in dispatch thread! (I)",
+                " @CavPh2DSOCKET:   Inconsistent client state in dispatch thread! (I)",
                 verbosity.low,
             )
             return
@@ -438,7 +438,7 @@ class Driver(DriverSocket):
 
         if not (self.status & Status.Ready):
             warning(
-                " @SOCKET:   Inconsistent client state in dispatch thread! (II)",
+                " @CavPh2DSOCKET:   Inconsistent client state in dispatch thread! (II)",
                 verbosity.low,
             )
             return
@@ -449,7 +449,7 @@ class Driver(DriverSocket):
         self.get_status()
         if not (self.status & Status.HasData):
             warning(
-                " @SOCKET:   Inconsistent client state in dispatch thread! (III)",
+                " @CavPh2DSOCKET:   Inconsistent client state in dispatch thread! (III)",
                 verbosity.low,
             )
             return
@@ -477,7 +477,7 @@ class Driver(DriverSocket):
         r["status"] = "Done"
 
 
-class InterfaceSocket(object):
+class InterfaceCavPh2DSocket(object):
 
     """Host server class.
 
@@ -582,7 +582,7 @@ class InterfaceSocket(object):
             )
         else:
             raise NameError(
-                "InterfaceSocket mode "
+                "InterfaceCavPh2DSocket mode "
                 + self.mode
                 + " is not implemented (should be unix/inet)"
             )
@@ -597,7 +597,7 @@ class InterfaceSocket(object):
     def close(self):
         """Closes down the socket."""
 
-        info(" @SOCKET: Shutting down the driver interface.", verbosity.low)
+        info(" @CavPh2DSOCKET: Shutting down the driver interface.", verbosity.low)
 
         for c in self.clients:
             try:
@@ -615,7 +615,7 @@ class InterfaceSocket(object):
             self.server.close()
         except:
             info(
-                " @SOCKET: Problem shutting down the server socket. Will just continue and hope for the best.",
+                " @CavPh2DSOCKET: Problem shutting down the server socket. Will just continue and hope for the best.",
                 verbosity.low,
             )
         if self.mode == "unix":
@@ -655,7 +655,7 @@ class InterfaceSocket(object):
             if not (c.status & Status.Up):
                 try:
                     warning(
-                        " @SOCKET:   Client "
+                        " @CavPh2DSOCKET:   Client "
                         + str(c.peername)
                         + " died or got unresponsive(C). Removing from the list.",
                         verbosity.low,
@@ -693,7 +693,7 @@ class InterfaceSocket(object):
                 client.settimeout(TIMEOUT)
                 driver = Driver(client)
                 info(
-                    " @SOCKET:   Client asked for connection from "
+                    " @CavPh2DSOCKET:   Client asked for connection from "
                     + str(address)
                     + ". Now hand-shaking.",
                     verbosity.low,
@@ -703,14 +703,14 @@ class InterfaceSocket(object):
                     driver.exit_on_disconnect = self.exit_on_disconnect
                     self.clients.append(driver)
                     info(
-                        " @SOCKET:   Handshaking was successful. Added to the client list.",
+                        " @CavPh2DSOCKET:   Handshaking was successful. Added to the client list.",
                         verbosity.low,
                     )
                     self.poll_iter = UPDATEFREQ  # if a new client was found, will try again harder next time
                     searchtimeout = SERVERTIMEOUT
                 else:
                     warning(
-                        " @SOCKET:   Handshaking failed. Dropping connection.",
+                        " @CavPh2DSOCKET:   Handshaking failed. Dropping connection.",
                         verbosity.low,
                     )
                     client.shutdown(socket.SHUT_RDWR)
@@ -803,7 +803,7 @@ class InterfaceSocket(object):
             return False
         if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy)):
             warning(
-                " @SOCKET: Client "
+                " @CavPh2DSOCKET: Client "
                 + str(fc.peername)
                 + " is in an unexpected status "
                 + str(fc.status)
@@ -825,7 +825,7 @@ class InterfaceSocket(object):
             r["status"] = "Running"
             self.prlist.remove(r)
             info(
-                " @SOCKET: %s Assigning [%5s] request id %4s to client with last-id %4s (% 3d/% 3d : %s)"
+                " @CavPh2DSOCKET: %s Assigning [%5s] request id %4s to client with last-id %4s (% 3d/% 3d : %s)"
                 % (
                     time.strftime("%y/%m/%d-%H:%M:%S"),
                     match_ids,
@@ -866,13 +866,13 @@ class InterfaceSocket(object):
             and time.time() - r["start"] > self.timeout
         ):
             warning(
-                " @SOCKET:  Timeout! request has been running for "
+                " @CavPh2DSOCKET:  Timeout! request has been running for "
                 + str(time.time() - r["start"])
                 + " sec.",
                 verbosity.low,
             )
             warning(
-                " @SOCKET:   Client "
+                " @CavPh2DSOCKET:   Client "
                 + str(c.peername)
                 + " died or got unresponsive(A). Disconnecting.",
                 verbosity.low,

@@ -51,7 +51,7 @@ class InputThermoBase(Input):
     """
 
     attribs = {"mode": (InputAttribute, {"dtype": str,
-                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl", "ffl"],
+                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl", "ffl", "cavloss_langevin"],
                                          "help": "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'ffl' is the fast-forward langevin thermostat, in which momenta are flipped back whenever the action of the thermostat changes its direction. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          })}
     fields = {"ethermo": (InputValue, {"dtype": float,
@@ -153,6 +153,9 @@ class InputThermoBase(Input):
             self.mode.store("ffl")
             self.tau.store(thermo.tau)
             self.flip.store(thermo.flip)
+        elif type(thermo) is ethermostats.ThermoCavLossLangevin:
+            self.mode.store("cavloss_langevin")
+            self.tau.store(thermo.tau)
         elif type(thermo) is ethermostats.Thermostat:
             self.mode.store("")
         else:
@@ -201,6 +204,10 @@ class InputThermoBase(Input):
             thermo = ethermostats.ThermoCL(tau=self.tau.fetch(), intau=self.intau.fetch(), idtau=self.idtau.fetch(), apat=self.apat.fetch())
         elif self.mode.fetch() == "ffl":
             thermo = ethermostats.ThermoFFL(tau=self.tau.fetch(), flip=self.flip.fetch())
+        # Start with Tao E. Li's modifications 2021/04/22
+        elif self.mode.fetch() == "cavloss_langevin":
+            thermo = ethermostats.ThermoCavLossLangevin(tau=self.tau.fetch())
+        # End with Tao E. Li's modifications
         elif self.mode.fetch() == "":
             thermo = ethermostats.Thermostat()
         else:
@@ -216,7 +223,7 @@ class InputThermoBase(Input):
         super(InputThermoBase, self).check()
         mode = self.mode.fetch()
 
-        if mode in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g", "ffl"]:
+        if mode in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g", "ffl", "cavloss_langevin"]:
             if self.tau.fetch() <= 0:
                 raise ValueError("The thermostat friction coefficient must be set to a positive value")
         if mode == "cl":

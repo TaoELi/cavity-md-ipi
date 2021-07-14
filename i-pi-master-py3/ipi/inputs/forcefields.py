@@ -8,7 +8,7 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFCavPh2DSocket
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFCavPh2DSocket, FFCavPh
 from ipi.interfaces.sockets import InterfaceSocket
 import ipi.engine.initializer
 from ipi.inputs.initializer import *
@@ -18,7 +18,7 @@ from ipi.interfaces.cavph2dsockets import InterfaceCavPh2DSocket
 
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFCavPh2DSocket"]
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFCavPh2DSocket", "InputFFCavPh"]
 
 
 class InputForceField(Input):
@@ -588,3 +588,57 @@ class InputFFCavPh2DSocket(InputForceField):
             raise ValueError("Negative latency parameter specified.")
         if self.timeout.fetch() < 0.0:
             raise ValueError("Negative timeout parameter specified.")
+
+class InputFFCavPh(InputForceField):
+
+    fields = {"input_xyz_filename": (InputValue, {"dtype": str,
+                                       "default": "init.xyz",
+                                       "help": "The input xyz file for only molecules or molecules + photons (assuming 0, 1 neutral charge)"}),
+              "grad_method": (InputValue, {"dtype": str,
+                                            "default": 'hf/3-21g',
+                                            "help": "The method and basis for ab initio calculation (currently only support RHF/UHF)"}),
+              "output_file": (InputValue, {"dtype": str,
+                                            "default": 'output.dat',
+                                            "help": "Output file for ab initio code"}),
+              "memory_usage": (InputValue, {"dtype": str,
+                                            "default": "2 Gb",
+                                            "help": "Memory for ab initio calculations"}),
+              "numpy_memory": (InputValue, {"dtype": int,
+                                            "default": 2,
+                                            "help": "Memory for PSI4 numpy (in Gb)"}),
+              "nthread": (InputValue, {"dtype": int,
+                                          "default": 1,
+                                          "help": "Number of threads used for PSI4 calculation"})
+    }
+
+    fields.update(InputForceField.fields)
+
+    attribs = {}
+    attribs.update(InputForceField.attribs)
+
+    default_help = """Harmonic energy calculator """
+    default_label = "FFCavPh"
+
+    def store(self, ff):
+        if (not type(ff) is FFCavPh):
+            raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
+
+        super(InputFFCavPh, self).store(ff)
+        self.input_xyz_filename.store(ff.input_xyz_filename)
+        self.grad_method.store(ff.grad_method)
+        self.output_file.store(ff.output_file)
+        self.memory_usage.store(ff.memory_usage)
+        self.numpy_memory.store(ff.numpy_memory)
+        self.nthread.store(ff.nthread)
+
+    def fetch(self):
+        super(InputFFCavPh, self).fetch()
+
+        return FFCavPh(input_xyz_filename=self.input_xyz_filename.fetch(),
+        grad_method=self.grad_method.fetch(),
+        output_file=self.output_file.fetch(),
+        memory_usage=self.memory_usage.fetch(),
+        numpy_memory=self.numpy_memory.fetch(),
+        nthread=self.nthread.fetch(),
+        name=self.name.fetch(),
+        latency=self.latency.fetch(), dopbc=self.pbc.fetch(), threaded=self.threaded.fetch())

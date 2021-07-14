@@ -103,6 +103,7 @@ class InputSimulation(Input):
               "ffsgdml": (iforcefields.InputFFsGDML, {"help": iforcefields.InputFFsGDML.default_help}),
               "ffcavphsocket": (iforcefields.InputFFCavPhSocket, {"help": iforcefields.InputFFCavPhSocket.default_help}),
               "ffcavph2dsocket": (iforcefields.InputFFCavPh2DSocket, {"help": iforcefields.InputFFCavPh2DSocket.default_help}),
+              "ffcavph": (iforcefields.InputFFCavPh, {"help": iforcefields.InputFFCavPh.default_help}),
     }
 
     default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -180,6 +181,10 @@ class InputSimulation(Input):
                     _iobj = iforcefields.InputFFCavPh2DSocket()
                     _iobj.store(_obj)
                     self.extra[_ii] = ("ffcavph2dsocket", _iobj)
+                elif isinstance(_obj, eforcefields.FFCavPh):
+                    _iobj = iforcefields.InputFFCavPh()
+                    _iobj.store(_obj)
+                    self.extra[_ii] = ("ffcavph", _iobj)
                 elif isinstance(_obj, System):
                     _iobj = InputSystem()
                     _iobj.store(_obj)
@@ -213,7 +218,7 @@ class InputSimulation(Input):
                 syslist.append(v.fetch())
             elif k == "system_template":
                 syslist += v.fetch()  # this will actually generate automatically a bunch of system objects with the desired properties set automatically to many values
-            elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" or k == "ffsgdml" or k== "ffyaff" or k == "ffcavphsocket" or k == "ffcavph2dsocket":
+            elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" or k == "ffsgdml" or k== "ffyaff" or k == "ffcavphsocket" or k == "ffcavph2dsocket" or k == "ffcavph":
                 info(" # @simulation: Fetching" + k, verbosity.low)
                 fflist.append(v.fetch())
 

@@ -19,11 +19,14 @@ from ipi.utils.prng import Random
 from ipi.utils.messages import verbosity, warning, info
 from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
+# Start Tao E. Li's modification 2021/04/22
+from ipi.interfaces.photons import photons
+# End Tao E. Li's modification
 import json
 import os
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoFFL', 'ThermoPILE_L', 'ThermoPILE_G', 'ThermoSVR',
-           'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'ThermoCL', 'MultiThermo']
+           'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'ThermoCL', 'MultiThermo', 'ThermoCavLossLangevin']
 
 
 class Thermostat(dobject):
@@ -179,20 +182,6 @@ class ThermoLangevin(Thermostat):
         dself.S = depend_value(name="S", func=self.get_S,
                                dependencies=[dself.temp, dself.T])
 
-        # Tao E. Li modified at July 5 2020
-        # I want to give the ability to rescale only a few momenta for photons only
-        dself.thermalize_photon_only = False
-        path = os.getcwd()
-        with open(path+"/photon_params.json") as json_file:
-            data = json.load(json_file)
-        if data["apply_photon"] and data.get("theramlize_photon_only", False):
-            dself.thermalize_photon_only = True
-            print("## We thermalize photon only with a Langevin thermostat ##")
-        dself.thermalize_photon_start = 0
-        if data["apply_photon"] and dself.thermalize_photon_only:
-            dself.thermalize_phton_start = -data.get("n_modes", 1) * 2 * 3
-            print("## We start from %d ##" %self.thermalize_phton_start)
-        # End of Tao E. Li modification
 
     def step(self):
         """Updates the bound momentum vector with a langevin thermostat."""
@@ -204,13 +193,8 @@ class ThermoLangevin(Thermostat):
         p /= sm
 
         et += np.dot(p, p) * 0.5
-        # original code
-        #p *= self.T
-        #p += self.S * self.prng.gvec(len(p))
-        # Tao E. Li's modification new code
-        p[self.thermalize_phton_start:] *= self.T
-        p[self.thermalize_phton_start:] += self.S * self.prng.gvec(len(p[self.thermalize_phton_start:]))
-        # end of Tao E. Li's modifications
+        p *= self.T
+        p += self.S * self.prng.gvec(len(p))
         et -= np.dot(p, p) * 0.5
 
         p *= sm
@@ -1167,6 +1151,81 @@ class MultiThermo(Thermostat):
             t.step()
         pass
 
+# Start Tao E. Li's modifications 2021/04/22
+class ThermoCavLossLangevin(Thermostat):
+
+    """Represents a cavloss_langevin thermostat.
+
+    Depend objects:
+       tau: Thermostat damping time scale. Larger values give a less strongly
+          coupled thermostat.
+       T: Coefficient of the diffusive contribution of the thermostat, i.e. the
+          drift back towards equilibrium. Depends on tau and the time step.
+       S: Coefficient of the stochastic contribution of the thermostat, i.e.
+          the uncorrelated Gaussian noise. Depends on T and the temperature.
+    """
+
+    def get_T(self):
+        """Calculates the coefficient of the overall drift of the velocities."""
+
+        return np.exp(-self.dt / self.tau)
+
+    def get_S(self):
+        """Calculates the coefficient of the white noise."""
+
+        return np.sqrt(Constants.kb * self.temp * (1 - self.T**2))
+
+    def __init__(self, temp=1.0, dt=1.0, tau=1.0, ethermo=0.0):
+        """Initialises ThermoCavLossLangevin.
+
+        Args:
+           temp: The simulation temperature. Defaults to 1.0.
+           dt: The simulation time step. Defaults to 1.0.
+           tau: The thermostat damping timescale. Defaults to 1.0.
+           ethermo: The initial heat energy transferred to the bath.
+              Defaults to 0.0. Will be non-zero if the thermostat is
+              initialised from a checkpoint file.
+        """
+
+        super(ThermoCavLossLangevin, self).__init__(temp, dt, ethermo)
+        dself = dd(self)
+
+        dself.dt = depend_value(value=dt, name='dt')
+        dself.tau = depend_value(value=tau, name='tau')
+        dself.T = depend_value(name="T", func=self.get_T,
+                               dependencies=[dself.tau, dself.dt])
+        dself.S = depend_value(name="S", func=self.get_S,
+                               dependencies=[dself.temp, dself.T])
+
+        # invoke the definition of photons
+        self.photons = photons()
+        self.apply_photon = self.photons.apply_photon
+
+    def step(self):
+        """Updates the bound momentum vector with a langevin thermostat."""
+
+        et = self.ethermo
+        p = dstrip(self.p).copy()
+        sm = dstrip(self.sm)
+
+        p /= sm
+
+        et += np.dot(p, p) * 0.5
+        p *= self.T
+        p += self.S * self.prng.gvec(len(p))
+        et -= np.dot(p, p) * 0.5
+
+        p *= sm
+
+        # Here, we only update the momentum for degree's of cavity photons to
+        # represent the effect of cavity loss
+        if self.apply_photon:
+            print("adding langevin thermostat at only photon DoFs")
+            self.p[-3*self.photons.nphoton:] = p[-3*self.photons.nphoton:]
+            # self.p = p
+        self.ethermo = et
+
+# End with Tao E. Li's modifications
 
 def hfunc(x):
     return (np.sign(x) - 1.0) * x

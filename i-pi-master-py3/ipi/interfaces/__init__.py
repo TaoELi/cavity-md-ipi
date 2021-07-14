@@ -5,4 +5,4 @@
 # See the "licenses" directory for full license information.
 
 
-__all__ = ["sockets", "cavphsockets"]
+__all__ = ["sockets", "cavphsockets", "dipole", "photons"]

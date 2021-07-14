@@ -8,14 +8,17 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFCavPh2DSocket, FFCavPh
 from ipi.interfaces.sockets import InterfaceSocket
 import ipi.engine.initializer
 from ipi.inputs.initializer import *
 from ipi.utils.inputvalue import *
+from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
+from ipi.interfaces.cavph2dsockets import InterfaceCavPh2DSocket
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML']
+
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFCavPh2DSocket", "InputFFCavPh"]
 
 
 class InputForceField(Input):
@@ -349,9 +352,9 @@ class InputFFYaff(InputForceField):
 
 class InputFFsGDML(InputForceField):
 
-    fields = { 
+    fields = {
         "sGDML_model": (InputValue, {"dtype": str, "default": None, "help": "This gives the file name of the sGDML model."}),
-    }   
+    }
 
     fields.update(InputForceField.fields)
 
@@ -369,3 +372,273 @@ class InputFFsGDML(InputForceField):
         super(InputFFsGDML, self).fetch()
 
         return FFsGDML(sGDML_model=self.sGDML_model.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(), threaded=self.threaded.fetch())
+
+class InputFFCavPhSocket(InputForceField):
+
+    """Creates a ForceField object with a socket interface.
+
+    Handles generating one instance of a socket interface forcefield class.
+
+    Attributes:
+       mode: Describes whether the socket will be a unix or an internet socket.
+
+    Fields:
+       address: The server socket binding address.
+       port: The port number for the socket.
+       slots: The number of clients that can queue for connections at any one
+          time.
+       timeout: The number of seconds that the socket will wait before assuming
+          that the client code has died. If 0 there is no timeout.
+    """
+
+    fields = {"address": (InputValue, {"dtype": str,
+                                       "default": "localhost",
+                                       "help": "This gives the server address that the socket will run on."}),
+              "port": (InputValue, {"dtype": int,
+                                    "default": 65535,
+                                    "help": "This gives the port number that defines the socket."}),
+              "slots": (InputValue, {"dtype": int,
+                                     "default": 4,
+                                     "help": "This gives the number of client codes that can queue at any one time."}),
+              "exit_on_disconnect": (InputValue, {"dtype": bool,
+                                                  "default": False,
+                                                  "help": "Determines if i-PI should quit when a client disconnects."}),
+              "timeout": (InputValue, {"dtype": float,
+                                       "default": 0.0,
+                                       "help": "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout."})}
+    attribs = {
+        "mode": (InputAttribute, {"dtype": str,
+                                  "options": ["unix", "inet"],
+                                  "default": "inet",
+                                  "help": "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]."}),
+                "matching": (InputAttribute, {"dtype": str,
+                                              "options": ["auto", "any"],
+                                              "default": "auto",
+                                              "help": "Specifies whether requests should be dispatched to any client, or automatically matched to the same client when possible [auto]."})
+    }
+
+    attribs.update(InputForceField.attribs)
+    fields.update(InputForceField.fields)
+
+    # FFCavPhSocket polling mechanism won't work with non-threaded execution
+    attribs["threaded"] = (InputValue, {"dtype": bool,
+                                        "default": True,
+                                        "help": "Whether the forcefield should use a thread loop to evaluate, or work in serial. Should be set to True for FFSockets"});
+
+    default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
+    default_label = "FFCavPhSocket"
+
+    def store(self, ff):
+        """Takes a ForceField instance and stores a minimal representation of it.
+
+        Args:
+           ff: A ForceField object with a FFCavPhSocket forcemodel object.
+        """
+
+        if (not type(ff) is FFCavPhSocket):
+            raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
+
+        super(InputFFCavPhSocket, self).store(ff)
+
+        self.address.store(ff.socket.address)
+        self.port.store(ff.socket.port)
+        self.timeout.store(ff.socket.timeout)
+        self.slots.store(ff.socket.slots)
+        self.mode.store(ff.socket.mode)
+        self.matching.store(ff.socket.match_mode)
+        self.exit_on_disconnect.store(ff.socket.exit_on_disconnect)
+        self.threaded.store(True)  # hard-coded
+
+    def fetch(self):
+        """Creates a ForceSocket object.
+
+        Returns:
+           A ForceSocket object with the correct socket parameters.
+        """
+
+        if self.threaded.fetch() == False:
+            raise ValueError("FFCavPhSockets cannot poll without threaded mode.")
+        # just use threaded throughout
+        return FFCavPhSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
+                        active=self.activelist.fetch(), threaded=self.threaded.fetch(),
+                        interface=InterfaceCavPhSocket(address=self.address.fetch(), port=self.port.fetch(),
+                                                  slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch(),
+                                                  match_mode=self.matching.fetch(), exit_on_disconnect=self.exit_on_disconnect.fetch()))
+
+    def check(self):
+        """Deals with optional parameters."""
+
+        super(InputFFCavPhSocket, self).check()
+        if self.port.fetch() < 1 or self.port.fetch() > 65535:
+            raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
+        elif self.port.fetch() < 1025:
+            warning("Low port number being used, this may interrupt important system processes.", verbosity.low)
+
+        if self.slots.fetch() < 1 or self.slots.fetch() > 5:
+            raise ValueError("Slot number " + str(self.slots.fetch()) + " out of acceptable range.")
+        if self.latency.fetch() < 0:
+            raise ValueError("Negative latency parameter specified.")
+        if self.timeout.fetch() < 0.0:
+            raise ValueError("Negative timeout parameter specified.")
+
+class InputFFCavPh2DSocket(InputForceField):
+
+    """Creates a ForceField object with a socket interface.
+
+    Handles generating one instance of a socket interface forcefield class.
+
+    Attributes:
+       mode: Describes whether the socket will be a unix or an internet socket.
+
+    Fields:
+       address: The server socket binding address.
+       port: The port number for the socket.
+       slots: The number of clients that can queue for connections at any one
+          time.
+       timeout: The number of seconds that the socket will wait before assuming
+          that the client code has died. If 0 there is no timeout.
+    """
+
+    fields = {"address": (InputValue, {"dtype": str,
+                                       "default": "localhost",
+                                       "help": "This gives the server address that the socket will run on."}),
+              "port": (InputValue, {"dtype": int,
+                                    "default": 65535,
+                                    "help": "This gives the port number that defines the socket."}),
+              "slots": (InputValue, {"dtype": int,
+                                     "default": 4,
+                                     "help": "This gives the number of client codes that can queue at any one time."}),
+              "exit_on_disconnect": (InputValue, {"dtype": bool,
+                                                  "default": False,
+                                                  "help": "Determines if i-PI should quit when a client disconnects."}),
+              "timeout": (InputValue, {"dtype": float,
+                                       "default": 0.0,
+                                       "help": "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout."})}
+    attribs = {
+        "mode": (InputAttribute, {"dtype": str,
+                                  "options": ["unix", "inet"],
+                                  "default": "inet",
+                                  "help": "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]."}),
+                "matching": (InputAttribute, {"dtype": str,
+                                              "options": ["auto", "any"],
+                                              "default": "auto",
+                                              "help": "Specifies whether requests should be dispatched to any client, or automatically matched to the same client when possible [auto]."})
+    }
+
+    attribs.update(InputForceField.attribs)
+    fields.update(InputForceField.fields)
+
+    # FFCav2DPhSocket polling mechanism won't work with non-threaded execution
+    attribs["threaded"] = (InputValue, {"dtype": bool,
+                                        "default": True,
+                                        "help": "Whether the forcefield should use a thread loop to evaluate, or work in serial. Should be set to True for FFSockets"});
+
+    default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
+    default_label = "FFCavPh2DSocket"
+
+    def store(self, ff):
+        """Takes a ForceField instance and stores a minimal representation of it.
+
+        Args:
+           ff: A ForceField object with a FFCavPh2DSocket forcemodel object.
+        """
+
+        if (not type(ff) is FFCavPh2DSocket):
+            raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
+
+        super(InputFFCavPh2DSocket, self).store(ff)
+
+        self.address.store(ff.socket.address)
+        self.port.store(ff.socket.port)
+        self.timeout.store(ff.socket.timeout)
+        self.slots.store(ff.socket.slots)
+        self.mode.store(ff.socket.mode)
+        self.matching.store(ff.socket.match_mode)
+        self.exit_on_disconnect.store(ff.socket.exit_on_disconnect)
+        self.threaded.store(True)  # hard-coded
+
+    def fetch(self):
+        """Creates a ForceSocket object.
+
+        Returns:
+           A ForceSocket object with the correct socket parameters.
+        """
+
+        if self.threaded.fetch() == False:
+            raise ValueError("FFCavPh2DSockets cannot poll without threaded mode.")
+        # just use threaded throughout
+        return FFCavPh2DSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
+                        active=self.activelist.fetch(), threaded=self.threaded.fetch(),
+                        interface=InterfaceCavPh2DSocket(address=self.address.fetch(), port=self.port.fetch(),
+                                                  slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch(),
+                                                  match_mode=self.matching.fetch(), exit_on_disconnect=self.exit_on_disconnect.fetch()))
+
+    def check(self):
+        """Deals with optional parameters."""
+
+        super(InputFFCavPh2DSocket, self).check()
+        if self.port.fetch() < 1 or self.port.fetch() > 65535:
+            raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
+        elif self.port.fetch() < 1025:
+            warning("Low port number being used, this may interrupt important system processes.", verbosity.low)
+
+        if self.slots.fetch() < 1 or self.slots.fetch() > 5:
+            raise ValueError("Slot number " + str(self.slots.fetch()) + " out of acceptable range.")
+        if self.latency.fetch() < 0:
+            raise ValueError("Negative latency parameter specified.")
+        if self.timeout.fetch() < 0.0:
+            raise ValueError("Negative timeout parameter specified.")
+
+class InputFFCavPh(InputForceField):
+
+    fields = {"input_xyz_filename": (InputValue, {"dtype": str,
+                                       "default": "init.xyz",
+                                       "help": "The input xyz file for only molecules or molecules + photons (assuming 0, 1 neutral charge)"}),
+              "grad_method": (InputValue, {"dtype": str,
+                                            "default": 'hf/3-21g',
+                                            "help": "The method and basis for ab initio calculation (currently only support RHF/UHF)"}),
+              "output_file": (InputValue, {"dtype": str,
+                                            "default": 'output.dat',
+                                            "help": "Output file for ab initio code"}),
+              "memory_usage": (InputValue, {"dtype": str,
+                                            "default": "2 Gb",
+                                            "help": "Memory for ab initio calculations"}),
+              "numpy_memory": (InputValue, {"dtype": int,
+                                            "default": 2,
+                                            "help": "Memory for PSI4 numpy (in Gb)"}),
+              "nthread": (InputValue, {"dtype": int,
+                                          "default": 1,
+                                          "help": "Number of threads used for PSI4 calculation"})
+    }
+
+    fields.update(InputForceField.fields)
+
+    attribs = {}
+    attribs.update(InputForceField.attribs)
+
+    default_help = """Harmonic energy calculator """
+    default_label = "FFCavPh"
+
+    def store(self, ff):
+        if (not type(ff) is FFCavPh):
+            raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
+
+        super(InputFFCavPh, self).store(ff)
+        self.input_xyz_filename.store(ff.input_xyz_filename)
+        self.grad_method.store(ff.grad_method)
+        self.output_file.store(ff.output_file)
+        self.memory_usage.store(ff.memory_usage)
+        self.numpy_memory.store(ff.numpy_memory)
+        self.nthread.store(ff.nthread)
+
+    def fetch(self):
+        super(InputFFCavPh, self).fetch()
+
+        return FFCavPh(input_xyz_filename=self.input_xyz_filename.fetch(),
+        grad_method=self.grad_method.fetch(),
+        output_file=self.output_file.fetch(),
+        memory_usage=self.memory_usage.fetch(),
+        numpy_memory=self.numpy_memory.fetch(),
+        nthread=self.nthread.fetch(),
+        name=self.name.fetch(),
+        latency=self.latency.fetch(), dopbc=self.pbc.fetch(), threaded=self.threaded.fetch())

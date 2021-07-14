@@ -84,7 +84,10 @@ ipi/inputs/smotion/metad.py
 ipi/inputs/smotion/remd.py
 ipi/inputs/smotion/smotion.py
 ipi/interfaces/__init__.py
+ipi/interfaces/cavph2dsockets.py
+ipi/interfaces/cavphsockets.py
 ipi/interfaces/dipole.py
+ipi/interfaces/fdtd.py
 ipi/interfaces/photons.py
 ipi/interfaces/sockets.py
 ipi/utils/__init__.py
