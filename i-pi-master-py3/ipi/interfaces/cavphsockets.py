@@ -473,6 +473,10 @@ class Driver(DriverSocket):
 
             # 4. Calculate photonic force
             f_photon = self.photons.calc_photon_force(dipole_x_tot, dipole_y_tot)
+            # 4.1. Update if adding external electric fields on the photonic DoFs
+            self.photons.add_pulse(f_photon)
+            # copy the phase information from dipole
+            self.photons.add_cw(f_photon, phase=self.dipole.get_cw_phase())
 
             # 5. Merge the two forces
             mf = np.concatenate((mf[:], f_photon[:]))

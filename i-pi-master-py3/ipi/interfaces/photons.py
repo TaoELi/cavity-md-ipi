@@ -83,6 +83,49 @@ class photons:
             self.coeff_self = np.sum(self.E0_lst[0:self.nmodes]**2 / self.mass / self.freq_lst[0:self.nmodes]**2)
             self.pot_coeff = 0.5 * self.mass * self.freq_lst**2
             self.pot_coeff2 = self.mass * np.reshape(np.array([[x,x,x] for x in self.freq_lst]), -1)**2
+            # Find if photon_params.json has defined an incoming pulse at initial times
+            self.have_incoming_pulse = data.get("add_pulse_photon", False)
+            self.have_incoming_cw = data.get("add_cw_photon", False)
+            if self.have_incoming_pulse:
+                self.add_pulse_direction = data.get("add_pulse_direction", 0)
+                print("## Adding a pulse on photons at %d direction (0-x, 1-y, 2-z) ##" %self.add_pulse_direction)
+                # pulse_params = ["E0", "tau_FWHM", "omega", "phase", "t0"]
+                self.pulse_params = data.get("pulse_params", [1.0, 10.0, 3550.0, 3.14, 10.0])
+                if type(self.pulse_params[2]) is list:
+                    print("In fact, we add many gaussian pulses on photons at the same time...")
+                    self.pulse_params[2] = np.array([x * 2.998e-5 * 2.0 * np.pi for x in self.pulse_params[2]])
+                else:
+                    self.pulse_params[2] *= 2.998e-5 * 2.0 * np.pi # unit converse from cm-1 to 2pi*fs-1
+                    self.pulse_params[2] = np.array([self.pulse_params[2]])
+                self.t = data.get("t0", 0.0)
+                self.dt = data.get("dt", 0.5)
+                self.transition_photon_dipole = data.get("transition_photon_dipole", 0.0)
+                print("## add initial pulse on photons with E0 %.2E at time %.2f ##" %(self.pulse_params[0], self.pulse_params[4]))
+            else:
+                print("## have not set initial pulse on photons ##")
+            if self.have_incoming_cw:
+                self.add_cw_direction = data.get("add_cw_direction", 0)
+                print("## Adding a cw field on photons at %d direction (0-x, 1-y, 2-z) ##" %self.add_cw_direction)
+                # cw_params = ["E0", "omega", "phase", "tstart", "tend"]
+                self.cw_params = data.get("cw_params", [1e-3, 3550.0, 3.14, 10.0, 1e4])
+                # Let us add the possibility to add a few waves to the system with different frequencies
+                if type(self.cw_params[0]) is list:
+                    print("In fact, we add many cw waves on photons at the same time...")
+                    self.have_many_cw = True
+                    for idx in range(len(self.cw_params)):
+                        self.cw_params[idx][1] *= 2.998e-5 * 2.0 * np.pi
+                        print("## For cw No.%d, add initial cw with E0 %.2E at time %.2f ending at \
+                            %.2f##" %(idx, self.cw_params[idx][0], self.cw_params[idx][3], self.cw_params[idx][4]) )
+                else:
+                    self.have_many_cw = False
+                    self.cw_params[1] *= 2.998e-5 * 2.0 * np.pi # unit converse from cm-1 to 2pi*fs-1
+                    print("## add initial cw with E0 %.2E at time %.2f ending at \
+                        %.2f##" %(self.cw_params[0], self.cw_params[3], self.cw_params[4]) )
+                self.t = data.get("t0", 0.0)
+                self.dt = data.get("dt", 0.5)
+                self.transition_photon_dipole = data.get("transition_photon_dipole", 0.0)
+            else:
+                print("## have not set initial cw on photons ##")
         else:
             print("No photon applied")
         print("### End of initialization ###")
@@ -90,6 +133,59 @@ class photons:
     def update_pos(self, pos):
         #pos = [x1, y1, z1, x2, y2, z2, ...; x1, y1, z1, x2, y2, z2, ...]
         self.pos = pos
+
+    def add_pulse(self, mf):
+        if self.have_incoming_pulse:
+            self.t += self.dt
+            if self.t > self.pulse_params[4] and self.t < self.pulse_params[4] + self.pulse_params[1]*8.0:
+                t = self.t - self.pulse_params[4] - self.pulse_params[1]*4.0
+                Ex = np.sum(self.pulse_params[0] * np.exp(-t**2 / self.pulse_params[1]**2 \
+                    * 2.0 * np.log(2.0)) * np.cos(self.pulse_params[2]*self.t + self.pulse_params[3]))
+                if self.add_pulse_direction == 0:
+                    mf[0:self.nmodes*3:3] += Ex * self.transition_photon_dipole
+                elif self.add_pulse_direction == 1:
+                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_dipole
+
+    def add_cw(self, mf, phase):
+        if self.have_incoming_cw:
+            self.t += self.dt
+            if not self.have_many_cw:
+                # cw is not initalized for the molecules and we use random phase
+                if phase is None and self.cw_params[2] == "RANDOM_PHASE":
+                    # we reset the pulse phase
+                    self.cw_params[2] = np.random.rand() * 2.0 * np.pi
+                    print("Initialize the cw phase for photons as", self.cw_params[2])
+                # cw is not initalized for the molecules and we do not use random phase; do nothing
+                # cw is initalized for the molecules and we use random phase; assign phase to our parameters
+                # cw is initalized for the molecules and we do not use random phase; do noting
+                if phase is not None and self.cw_params[2] == "RANDOM_PHASE":
+                    self.cw_params[2] = phase
+
+                if self.t > self.cw_params[3] and self.t < self.cw_params[4]:
+                    Ex = self.cw_params[0] * np.cos(self.cw_params[1]*self.t + self.cw_params[2])
+                    if self.add_cw_direction == 0:
+                        mf[0:self.nmodes*3:3] += Ex * self.transition_photon_dipole
+                    elif self.add_cw_direction == 1:
+                        mf[self.nmodes*3+1::3] += Ex * self.transition_photon_dipole
+            else:
+                if phase is None:
+                    for cw_params in self.cw_params:
+                        if cw_params[2] == "RANDOM_PHASE":
+                            cw_params[2] = np.random.rand() * 2.0 * np.pi
+                            print("Initialize the cw phase for photons as", cw_params[2])
+                else:
+                    for cw_params, mphase in zip(self.cw_params, phase):
+                        if cw_params[2] == "RANDOM_PHASE":
+                            cw_params[2] = mphase
+                Ex = 0.0
+                for cw_params in self.cw_params:
+                    if self.t > cw_params[3] and self.t < cw_params[4]:
+                        Ex += np.sum(cw_params[0] * np.cos(cw_params[1]*self.t + cw_params[2]))
+                if self.add_cw_direction == 0:
+                    mf[0:self.nmodes*3:3] += Ex * self.transition_photon_dipole
+                elif self.add_cw_direction == 1:
+                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_dipole
+
 
     def obtain_potential(self):
         return np.sum(self.pot_coeff2 * self.pos**2) / 2.0

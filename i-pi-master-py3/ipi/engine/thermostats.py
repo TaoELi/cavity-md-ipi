@@ -1220,7 +1220,7 @@ class ThermoCavLossLangevin(Thermostat):
         # Here, we only update the momentum for degree's of cavity photons to
         # represent the effect of cavity loss
         if self.apply_photon:
-            print("adding langevin thermostat at only photon DoFs")
+            #print("adding langevin thermostat at only photon DoFs")
             self.p[-3*self.photons.nphoton:] = p[-3*self.photons.nphoton:]
             # self.p = p
         self.ethermo = et
