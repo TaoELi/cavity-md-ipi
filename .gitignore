@@ -1,2 +1,8 @@
 *.tar.gz
 debug/
+patches/
+legacy/
+cavmd_examples/CO2_laserPolariton/
+cavmd_examples/CO2_vib_relaxation/
+cavmd_examples/selective_excite_solute/
+cavmd_examples/water_VUSC/

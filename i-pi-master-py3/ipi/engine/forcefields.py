@@ -899,7 +899,7 @@ class FFCavPh(ForceField):
     """
 
     def __init__(self, input_xyz_filename="", grad_method='', output_file='',
-                memory_usage="", numpy_memory=2, nthread=1,
+                memory_usage="", numpy_memory=2, nthread=1, offdig_dipder_setzero=False,
                 latency=1.0, name="", pars=None, dopbc=False, threaded=False):
         """Initialises FFCavPh.
 
@@ -923,17 +923,21 @@ class FFCavPh(ForceField):
         self.memory_usage = memory_usage
         self.numpy_memory = numpy_memory
         self.nthread = nthread
+        self.offdig_dipder_setzero = offdig_dipder_setzero
+        self.name = name
         print("Ab initio code will read initial config from", self.input_xyz_filename)
-        print("Theory level", self.grad_method)
-        print("Raw file during ab initio calculation is generated to", self.output_file)
-        print("Memory allocated to ab initio calculation is %s" %self.memory_usage)
-        print("Memory allocated to numpy interface is %d Gb" %self.numpy_memory)
-        print("Number of thread for ab initio calculation is %d" %self.nthread)
+        if self.offdig_dipder_setzero:
+            print("We will deliberately set off-diagonal dipole derivatives to zero!!!")
+        #print("Theory level", self.grad_method)
+        #print("Raw file during ab initio calculation is generated to", self.output_file)
+        #print("Memory allocated to ab initio calculation is %s" %self.memory_usage)
+        #print("Memory allocated to numpy interface is %d Gb" %self.numpy_memory)
+        #print("Number of thread for ab initio calculation is %d" %self.nthread)
         # end of preset parameters
 
         self.init_nuclear_str = self.initialize_from_xyz(filename=self.input_xyz_filename)
 
-        if name == "psi4":
+        if self.name == "psi4":
             print("Using %s ab initio force field to do calculation" %name)
             # Initialize psi4 object
             try:
@@ -945,8 +949,10 @@ class FFCavPh(ForceField):
             psi4.set_num_threads(self.nthread)
             psi4.core.set_output_file(self.output_file, False)
             self.molec = psi4.geometry(self.init_nuclear_str)
+        elif self.name == "run_driver.sh":
+            print("Will run the bash script '%s' on the local path..." %self.name)
         else:
-            raise ValueError("%s pythonic force field is unavailable currently" %name)
+            raise ValueError("%s pythonic force field is unavailable currently" %self.name)
 
     def initialize_from_xyz(self, filename):
         if self.apply_photon:
@@ -961,15 +967,23 @@ class FFCavPh(ForceField):
                 str1 += thefile.readline()
             print("Atomic string is")
             print(str1)
+            # At the same time, I need a list to save the atomic labels
+            self.atom_label_lst = str1.split()[::4]
+            print("atomic labels are", self.atom_label_lst)
             return str1
         else:
             thefile = open(filename, 'r')
             nat = int(thefile.readline())
             print("CavPh force field will deal with %d atoms" %nat)
             thefile.readline()
-            str1 = thefile.read()
+            str1 = ""
+            for i in range(nat):
+                str1 += thefile.readline()
             print("Atomic string is")
             print(str1)
+            # At the same time, I need a list to save the atomic labels
+            self.atom_label_lst = str1.split()[::4]
+            print("atomic labels are", self.atom_label_lst)
             return str1
 
     def poll(self):
@@ -987,6 +1001,11 @@ class FFCavPh(ForceField):
         """ Evaluator for FFCavPh"""
         # 1. Obtain the total (nuclear + photonic) position arrary
         q = r["pos"]
+        rvecs = r["cell"][0]
+        # assuming primitive cubic cell
+        rvecs_nparray = np.array(rvecs)
+        #self.cell_length = rvecs[0][0]
+        self.cell_length = np.array2string(rvecs_nparray)
 
         if self.apply_photon:
             # 2.1 Separate nuclear and photonic positions
@@ -994,7 +1013,8 @@ class FFCavPh(ForceField):
             self.photons.update_pos(q[-3*self.photons.nphoton:])
 
             # 2.2 For molecular part, evaluate forces and dipole derivatives
-            e, mf, dipole_x_tot, dipole_y_tot, dipder_splitted = self.calc_bare_nuclear_force_dipder(q)
+            e, mf, dipole_x_tot, dipole_y_tot, dipole_z_tot, dipder_splitted = self.calc_bare_nuclear_force_dipder(q)
+            print("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, dipole_z_tot))
 
             # 2.3 Evaluate photonic energy (the same as FFCavPhSocket)
             e_photon = self.photons.obtain_potential()
@@ -1010,6 +1030,8 @@ class FFCavPh(ForceField):
             #mf[1::3] += - (Ey + self.photons.coeff_self * dipole_y_tot)  * dmudy
             # quantum code has cross terms dmu_i/dj (i, j=x,y,z)
             dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz = dipder_splitted
+            if self.offdig_dipder_setzero:
+                dmuydx, dmuxdy, dmuxdz, dmuydz = 0.0, 0.0, 0.0, 0.0
             ph_x_coeff = Ex + self.photons.coeff_self * dipole_x_tot
             ph_y_coeff = Ey + self.photons.coeff_self * dipole_y_tot
             mf[0::3] += - ph_x_coeff  * dmuxdx - ph_y_coeff  * dmuydx
@@ -1018,6 +1040,10 @@ class FFCavPh(ForceField):
 
             # 2.5. Calculate photonic force
             f_photon = self.photons.calc_photon_force(dipole_x_tot, dipole_y_tot)
+
+            # 2.5.1 Update if adding external electric fields on the photonic DoFs
+            self.photons.add_pulse(f_photon)
+            self.photons.add_cw(f_photon, phase=None)
 
             # 2.6. Merge the two forces
             mf = np.concatenate((mf[:], f_photon[:]))
@@ -1040,6 +1066,23 @@ class FFCavPh(ForceField):
             g, wfn2 = psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec, return_wfn=True)
             force = -np.asarray(g)
             return E, force.flatten()
+        elif self.name == "run_driver.sh":
+            # 1. we construct a string "ATOM1 x y z\n ATOM2 x y z\n ..."
+            total_str = ""
+            for idx in range(len(self.atom_label_lst)):
+                local_str = "%s %.6f %.6f %.6f\n" %(self.atom_label_lst[idx], q[idx*3], q[idx*3+1], q[idx*3+2])
+                total_str += local_str
+            #print("Use %s to evaluate the following molecular geometry:" %self.name)
+            #print(total_str)
+            bashCommand = "./" + self.name + ", %s" %total_str + ", %s" %self.cell_length + " ,phonon_no"
+            import subprocess
+            process = subprocess.Popen(bashCommand.split(","), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            # read data from local file
+            E = np.loadtxt("IPI_DRIVER_TEMP/energy.ry") * 0.5
+            force = np.loadtxt("IPI_DRIVER_TEMP/force.ry_au") * 0.5
+            force  = force.flatten()
+            return E, force
 
     def calc_bare_nuclear_force_dipder(self, q):
         if self.name == "psi4":
@@ -1049,8 +1092,13 @@ class FFCavPh(ForceField):
             self.molec.set_geometry(psi4.core.Matrix.from_array(q.reshape((-1, 3))))
             E, wfn = psi4.energy(self.grad_method, return_wfn=True, molecule=self.molec)
             # evaluate total dipole moment
-            mux = psi4.core.variable('SCF DIPOLE X') * self.Debye2AU
-            muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
+            try:
+                # depending on the version of psi4
+                mux, muy, muz = psi4.core.variable('SCF DIPOLE')
+            except:
+                mux = psi4.core.variable('SCF DIPOLE X') * self.Debye2AU
+                muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
+                muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
             force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
             H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
             dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
@@ -1081,4 +1129,34 @@ class FFCavPh(ForceField):
             #print("dmuydz")
             #print(dmuydz)
 
-            return E, force.flatten(), mux, muy, dipder_splitted
+            return E, force.flatten(), mux, muy, muz, dipder_splitted
+        elif self.name == "run_driver.sh":
+            # 1. we construct a string "ATOM1 x y z\n ATOM2 x y z\n ..."
+            total_str = ""
+            for idx in range(len(self.atom_label_lst)):
+                local_str = "%s %.6f %.6f %.6f\n" %(self.atom_label_lst[idx], q[idx*3], q[idx*3+1], q[idx*3+2])
+                total_str += local_str
+            #print("Use %s to evaluate the following molecular geometry:" %self.name)
+            #print(total_str)
+            bashCommand = "./" + self.name + ", %s" %total_str + ", %s" %self.cell_length + " ,phonon_yes"
+            import subprocess
+            process = subprocess.Popen(bashCommand.split(","), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            # read data from local file
+            E = np.loadtxt("IPI_DRIVER_TEMP/energy.ry") * 0.5
+            force = np.loadtxt("IPI_DRIVER_TEMP/force.ry_au") * 0.5
+            force  = force.flatten()
+
+            mux, muy, muz = np.loadtxt("IPI_DRIVER_TEMP/dipole.au")
+            Qx = np.loadtxt("IPI_DRIVER_TEMP/Qx")
+            Qy = np.loadtxt("IPI_DRIVER_TEMP/Qy")
+            Qz = np.loadtxt("IPI_DRIVER_TEMP/Qz")
+            dmuxdx = Qx[:,0]
+            dmuydx = Qy[:,0]
+            dmuxdy = Qx[:,1]
+            dmuydy = Qy[:,1]
+            dmuxdz = Qx[:,2]
+            dmuydz = Qy[:,2]
+            dipder_splitted = (dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz)
+
+            return E, force, mux, muy, muz, dipder_splitted

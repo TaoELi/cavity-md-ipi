@@ -109,6 +109,9 @@ class dipole:
             # 2020-10-03 Choose to apply PBC or not to the external package
             self.nuclei_force_use_pbc = data.get("nuclei_force_use_pbc", True)
 
+            # 2021-09-13 Choose if print charge array at each time step
+            self.print_charge = data.get("print_charge", False)
+
     def add_pulse(self, mf):
         if self.have_incoming_pulse:
             self.t += self.dt
@@ -150,10 +153,10 @@ class dipole:
     def set_charges(self):
         if self.have_not_set:
             self.charges = np.zeros(np.shape(self.pos[:,0]))
-            if self.not_have_charge_array:
-                self.charges[0::3] = -0.8472
-                self.charges[1::3] = 0.4236
-                self.charges[2::3] = 0.4236
+            if self.not_have_charge_array and not self.update_charge:
+                self.charges[0::3] = -0.8192 #-0.8472
+                self.charges[1::3] = 0.4096 #0.4236
+                self.charges[2::3] = 0.4096 #0.4236
                 print("## Caution, the charge of atoms are set defaultly as follows ##")
                 print(self.charges)
                 print("End of Caution")
@@ -250,6 +253,10 @@ class dipole:
         dipole_y_tot = np.sum(self.charges * self.pos[:,1])
         dmudx = self.charges
         dmudy = self.charges
+        # option for print charges
+        if self.print_charge:
+            print("Charges are:")
+            print(self.charges)
         return dipole_x_tot, dipole_y_tot, dmudx, dmudy
 
 if __name__ == "__main__":

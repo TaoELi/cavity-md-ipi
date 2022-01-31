@@ -51,7 +51,7 @@ class InputThermoBase(Input):
     """
 
     attribs = {"mode": (InputAttribute, {"dtype": str,
-                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl", "ffl", "cavloss_langevin"],
+                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl", "ffl", "cavloss_langevin", "multilangevin"],
                                          "help": "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'ffl' is the fast-forward langevin thermostat, in which momenta are flipped back whenever the action of the thermostat changes its direction. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          })}
     fields = {"ethermo": (InputValue, {"dtype": float,
@@ -156,6 +156,10 @@ class InputThermoBase(Input):
         elif type(thermo) is ethermostats.ThermoCavLossLangevin:
             self.mode.store("cavloss_langevin")
             self.tau.store(thermo.tau)
+        elif type(thermo) is ethermostats.ThermoMultiLangevin:
+            self.mode.store("multilangevin")
+            self.tau_m.store(thermo.tau_m)
+            self.tau_l.store(thermo.tau_l)
         elif type(thermo) is ethermostats.Thermostat:
             self.mode.store("")
         else:

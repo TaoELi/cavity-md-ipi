@@ -459,6 +459,7 @@ class Driver(DriverSocket):
             if self.dipole.update_charge:
                 self.dipole.update_charges(mcharge)
             dipole_x_tot, dipole_y_tot, dmudx, dmudy = self.dipole.calc_dipole_x_y_and_derivatives()
+            print("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, self.dipole.calc_dipoles_z_tot()))
 
             mu_int = Ex * dipole_x_tot + Ey * dipole_y_tot
             mu += mu_photon + mu_int + 0.5 * self.photons.coeff_self * (dipole_x_tot**2 + dipole_y_tot**2)
