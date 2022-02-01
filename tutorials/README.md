@@ -2,15 +2,15 @@
 1. [Installation](#installation)
 2. [First CavMD simulation](#first-cavmd-simulation)
 3. [Input file structure](#input-file-structure-of-cavmd)
-  a. [i-pi input file](#i-pi-input-file)
-  b. [Initial geometry of molecules + photons](#initial-geometry-of-molecules-+-photons)
-  c. [Standard LAMMPS input files](#standard-lammps-input-files)
-  d. [Defining photon parameters](#defining-photon-parameters)
+  - [i-pi input file](#i-pi-input-file)
+  - [Initial geometry of VSC system](#initial-geometry-of-vsc-system)
+  - [Standard LAMMPS input files](#standard-lammps-input-files)
+  - [Defining photon parameters](#defining-photon-parameters)
 4. [Advanced CavMD simulations](#advanced-cavmd-simulations)
-  a. [I: Multiple Rabi splitting](#i:-multiple-rabi-splitting)
-  b. [II: Going beyond water simulation](#ii:-going-beyond-water-simulation)
-  c. [III: Pulse excitation](#iii:-pulse-excitation)
-  d. [IV: Adding cavity loss](#iv:-adding-cavity-loss)
+  - [Multiple Rabi splitting](#multiple-rabi-splitting)
+  - [Going beyond water simulation](#going-beyond-water-simulation)
+  - [Pulse excitation](#pulse-excitation)
+  - [Adding cavity loss](#adding-cavity-loss)
 5. [Additional CavMD simulations](#additional-cavmd-simulations)
 
 ## Installation
@@ -126,7 +126,7 @@ Please keep **pbc='False'** to avoid problems in calculating molecular dipoles d
 ```
 to avoid the periodic boundary condition when calling external packages to calculate nuclear forces.
 
-### Initial geometry of molecules + photons
+### Initial geometry of VSC system
 **init.xyz** stores the coordinates for both molecules and photons. Because each cavity photon has two polarization directions, please add an even number of **L** element (which represents cavity photons) at the end of **init.xyz** and also make sure the total number of atoms equals to the number of nuclei PLUS the number of the **L** element. For example, by default, CavMD will include one cavity photon with two polarization directions, so one needs to add the following
 ```python
 L -8.65101e+00  1.11541e+00  4.56823e-01
@@ -160,7 +160,7 @@ These information are mandatory for cavity MD simulations:
 - "E0" denotes <img src="https://latex.codecogs.com/svg.latex?\tilde{\varepsilon}" /> (effective coupling strength in units of a.u.) for the fundamental photon mode; see [here](https://arxiv.org/abs/2004.04888) for details.
 
 ## Advanced CavMD simulations
-### I: Multiple Rabi splitting
+### Multiple Rabi splitting
 There are some optional parameters which allow more complicated CavMD simulations. For example, if the **photon_params.json** is
 ```json
 {
@@ -175,7 +175,7 @@ The new option "n_modes" will include 4 (four different cavity modes with spacin
 
 Remember that "E0" denotes the effective coupling strength for the fundamental (or with the smallest frequency) cavity mode. The effective coupling strengths for higher cavity modes are simple functions of "E0" and are predefined by quantum electrodynamics so here they are not allowed to be defined by users.
 
-### II: Going beyond water simulation
+### Going beyond water simulation
 
 The above definition is OK if the molecules are water molecules (**init.xyz** reads O H H O H H ...). To go beyond liquid water and to simulate VSC of V-USC of other molecules, please change **init.xyz**, **in.lmp**, and **data.lmp** to the system you are interested in and also add an additional control on **photon_params.json**:
 ```json
@@ -190,7 +190,7 @@ The above definition is OK if the molecules are water molecules (**init.xyz** re
 ```
 Here, the option "charge_array" will redefine the partial charge of each atom in the order of configurations. The number of partial charges should match the number of atoms in the simulations.
 
-### III: Pulse excitation
+### Pulse excitation
 We can simulate a pulse excitation when **photon_params.json** file is defined as follows:
 ```json
 {
@@ -236,7 +236,7 @@ Apart from the above **cw** pulse, one can also define a **Gaussian** pulse. A t
 ```
 Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0-4\*tau)^2/tau^2] \* cos(omega\*t + phi). The above parameters are Amp=1.0 a.u., tau = 10.0 fs, omega=3550.0 cm-1, phi=3.14, t0 = 20.0 fs. The Gaussian pulse will be applied at t0 and will be turned off at t0 + 8\*tau.
 
-### IV: Adding cavity loss
+### Adding cavity loss
 
 Under vibrational strong coupling, simplified models such as coupled oscillators usually need to introduce two phenomenological parameters: (i) the rate of molecular vibrational energy relaxation to ground state (vibrational linewidth), and (ii) the cavity loss rate, which describes the quality of the cavity (Q factor), or the probability for the confined cavity photon modes to leak their energy outside the cavity.
 
