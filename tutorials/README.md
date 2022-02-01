@@ -1,7 +1,7 @@
 # Table of Contents
 1. [Installation](#installation)
 2. [First CavMD simulation](#first-cavmd-simulation)
-3. [Input file structure](#input-file-structure-of-cavmd)
+3. [Input file structure of CavMD](#input-file-structure-of-cavmd)
   - [i-pi input file](#i-pi-input-file)
   - [Initial geometry of VSC system](#initial-geometry-of-vsc-system)
   - [Standard LAMMPS input files](#standard-lammps-input-files)
@@ -101,7 +101,7 @@ to obtain the following Rabi splitting spectrum:
 As shown above, outside the cavity, the wide O-H stretch (~3550 cm<sup>-1</sup>) peak (black line) is split to two peaks: the lower polariton (LP) peak and the upper polariton (UP) peaks. This peak splitting, as called the Rabi splitting, forms the signature of VSC.
 
 
-## Input file structure
+## Input file structure of CavMD
 
 After the first CavMD simulation, let us explain the necessary files to perform CavMD. In [**Rabi_splitting/**](Rabi_splitting/), the following files are necessary for a CavMD simulation:
 
