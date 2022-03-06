@@ -611,7 +611,10 @@ class InputFFCavPh(InputForceField):
                                           "help": "Number of threads used for PSI4 calculation"}),
               "offdig_dipder_setzero": (InputValue, {"dtype": bool,
                                           "default": False,
-                                          "help": "Screen (or delete) off-diagonal dipole derivatives"})
+                                          "help": "Screen (or delete) off-diagonal dipole derivatives"}),
+              "n_dipder_itp": (InputValue, {"dtype": int,
+                                          "default": 1,
+                                          "help": "Calculate dipole derivatives every n_dipder_itp time steps"})
     }
 
     fields.update(InputForceField.fields)
@@ -634,6 +637,7 @@ class InputFFCavPh(InputForceField):
         self.numpy_memory.store(ff.numpy_memory)
         self.nthread.store(ff.nthread)
         self.offdig_dipder_setzero.store(ff.offdig_dipder_setzero)
+        self.n_dipder_itp.store(ff.n_dipder_itp)
 
     def fetch(self):
         super(InputFFCavPh, self).fetch()
@@ -646,4 +650,7 @@ class InputFFCavPh(InputForceField):
         nthread=self.nthread.fetch(),
         offdig_dipder_setzero=self.offdig_dipder_setzero.fetch(),
         name=self.name.fetch(),
-        latency=self.latency.fetch(), dopbc=self.pbc.fetch(), threaded=self.threaded.fetch())
+        latency=self.latency.fetch(),
+        dopbc=self.pbc.fetch(),
+        threaded=self.threaded.fetch(),
+        n_dipder_itp=self.n_dipder_itp.fetch())

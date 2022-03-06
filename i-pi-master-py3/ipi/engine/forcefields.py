@@ -900,11 +900,12 @@ class FFCavPh(ForceField):
 
     def __init__(self, input_xyz_filename="", grad_method='', output_file='',
                 memory_usage="", numpy_memory=2, nthread=1, offdig_dipder_setzero=False,
-                latency=1.0, name="", pars=None, dopbc=False, threaded=False):
+                latency=1.0, name="", pars=None, dopbc=False, threaded=False, n_dipder_itp=1):
         """Initialises FFCavPh.
 
         Args:
            pars: Optional dictionary, giving the parameters needed by the driver.
+           n_itp_dipder: calculate dipder every n_itp_dipder step
         """
 
         # a socket to the communication library is created or linked
@@ -917,6 +918,12 @@ class FFCavPh(ForceField):
         self.apply_photon = self.photons.apply_photon
 
         # preset parameters
+        self.iter = 0
+        self.n_dipder_itp = n_dipder_itp
+        self.dipder_1 = None # at -1 checkpoint
+        self.dipder_2 = None # at -2 checkpoint
+        print("Dipole derivatives will be calculated every %d time step(s)" %self.n_dipder_itp)
+
         self.input_xyz_filename = input_xyz_filename
         self.grad_method = grad_method
         self.output_file = output_file
@@ -1052,6 +1059,7 @@ class FFCavPh(ForceField):
             e, mf = self.calc_bare_nuclear_force(q)
 
         # 3. Finally, update energy and forces
+        self.iter += 1
         r["result"] = [e, mf, np.zeros((3, 3), float), ""]
         r["status"] = "Done"
         r["t_finished"] = time.time()
@@ -1100,8 +1108,21 @@ class FFCavPh(ForceField):
                 muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
                 muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
             force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
-            H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
-            dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
+
+            # we do not need to calculate dipder at every time step, it is very time consuming!
+            if self.iter % self.n_dipder_itp == 0:
+                H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
+                dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
+                if self.iter == 0:
+                    self.dipder_1 = dipder
+                    self.dipder_2 = dipder
+                else:
+                    self.dipder_2 = self.dipder_1
+                    self.dipder_1 = dipder
+            else:
+                # we interpolate dipder
+                resid = self.iter % self.n_dipder_itp
+                dipder = self.dipder_1 + (resid / self.n_dipder_itp) * (self.dipder_1 - self.dipder_2)
             # importantly, I need to split diper array to the desired ones
             dmuxdx = dipder[0::3,0]
             dmuydx = dipder[0::3,1]

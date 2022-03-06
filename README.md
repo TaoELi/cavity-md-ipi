@@ -4,29 +4,33 @@
 
 ## What is CavMD?
 
-CavMD is an approach to simulate **coupled photon-nuclear dynamics for realistic molecules** in optical or plasmonic cavities. By propagating the classical motion of nuclei and cavity photons on an electronic ground-state surface, we can use CavMD to explore possible cavity modifications of molecular properties. This approach is a natural extension of the coupled oscillator model, i.e., both a caivty photon and a molecular bright mode are described by harmonic oscillators. It aims to accurately describe **vibrational strong (VSC) or ultrastrong (V-USC) coupling**, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum. Nuclear and photonic quantum effects can be further included in CavMD by path-integral treatments (not reported yet).
+CavMD is an approach to simulate **coupled photon-nuclear dynamics for realistic molecules** in optical or plasmonic cavities under **vibrational strong coupling (VSC)**. By propagating the classical motion of nuclei and cavity photons on an electronic ground-state surface, we can use CavMD to explore possible cavity modifications of molecular properties. This approach is a natural extension of the coupled oscillator model, i.e., both a caivty photon and a molecular bright mode are described by harmonic oscillators. It aims to accurately describe **VSC or vibrational ultrastrong (V-USC) coupling**, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum. Nuclear and photonic quantum effects can be further included in CavMD by path-integral treatments (not reported yet).
 
 This approach is still under development and more features will be reported and updated in the near future.
 
 ## What can CavMD do NOW?
 
-- Propagating **nonreactive** molecular dynamics under VSC for both isolated and condensed-phase molecules, where cavity loss or external laser pumping can be included.
+- Propagating **nonreactive, classical** molecular dynamics under VSC for both isolated and condensed-phase molecules, where cavity loss or external laser pumping can be included.
+
+- Propagating **nonreactive, quantum** molecular dynamics under VSC via path integrals.
 
 ## How to use CavMD?
 
 Please check folder [**"tutorials/"**](tutorials/) for step-by-step introductions.
 
-Please also check the following Github repositories which store the input and post-processing files for generating all figures in the publications of CavMD.
+Please also check the following Github repositories which store the input and post-processing files for reproducing all figures in the publications of CavMD.
 
 - **Nonreactive VSC dynamics** for liquid water under liquid-phase VSC. [https://github.com/TaoELi/cavmd_examples_h2o](https://github.com/TaoELi/cavmd_examples_h2o)
 
 - **Nonreactive VSC dynamics** for liquid carbon dioxide under liquid-phase VSC. [https://github.com/TaoELi/cavmd_examples_co2](https://github.com/TaoELi/cavmd_examples_co2)
 
+For readers who are interested in reproducing the CavMD work, I strongly suggest the readers to first reproduce the work in https://github.com/TaoELi/cavmd_examples_h2o/tree/main/water_trpmd (the classical part) due to its cleaner file structure and documentation.
+
 ## Folder structure
 
-- i-pi-master-py3/: source code in python 3, the modified i-pi package which enables simulating VSC and V-USC.
+- **i-pi-master-py3/**: source code in python 3, the modified i-pi package which enables simulating VSC and V-USC.
 
-- tutorials/: a series of tutorials (from installation to a simulation example of CavMD) for exploring different features of CavMD.
+- **tutorials/**: a series of tutorials (from installation to a simulation example of CavMD) for exploring different features of CavMD.
 
 ## Citations
 
@@ -50,6 +54,8 @@ If you directly use the provided code in your simulations, please also cite the 
 - Li, T. E.; Nitzan, A.; Subotnik, J. E. Energy-efficient pathway for selectively exciting solute molecules to high vibrational states via solvent vibration-polariton pumping. [arXiv. 2021](https://arxiv.org/abs/2104.15121).
 
 - Li, T. E.; Nitzan, A.; Subotnik, J. E. Polariton relaxation under vibrational strong coupling: Comparing cavity molecular dynamics simulations against Fermi's golden rule rate. [arXiv. 2021](https://https://arxiv.org/abs/2111.12770).
+
+- Li, T. E., Nitzan, A., Hammes-Schiffer, S., Subotnik, J. E. Quantum Simulations of Vibrational Strong Coupling via Path Integrals. arXiv.
 
 ## Implementation
 
