@@ -99,7 +99,7 @@ class photons:
                     self.pulse_params[2] = np.array([self.pulse_params[2]])
                 self.t = data.get("t0", 0.0)
                 self.dt = data.get("dt", 0.5)
-                self.transition_photon_dipole = data.get("transition_photon_dipole", 0.0)
+                self.transition_photon_charge = data.get("transition_photon_charge", 0.0)
                 print("## add initial pulse on photons with E0 %.2E at time %.2f ##" %(self.pulse_params[0], self.pulse_params[4]))
             else:
                 print("## have not set initial pulse on photons ##")
@@ -123,7 +123,7 @@ class photons:
                         %.2f##" %(self.cw_params[0], self.cw_params[3], self.cw_params[4]) )
                 self.t = data.get("t0", 0.0)
                 self.dt = data.get("dt", 0.5)
-                self.transition_photon_dipole = data.get("transition_photon_dipole", 0.0)
+                self.transition_photon_charge = data.get("transition_photon_charge", 0.0)
             else:
                 print("## have not set initial cw on photons ##")
         else:
@@ -134,6 +134,7 @@ class photons:
         #pos = [x1, y1, z1, x2, y2, z2, ...; x1, y1, z1, x2, y2, z2, ...]
         self.pos = pos
 
+    '''
     def add_pulse(self, mf):
         if self.have_incoming_pulse:
             self.t += self.dt
@@ -142,9 +143,21 @@ class photons:
                 Ex = np.sum(self.pulse_params[0] * np.exp(-t**2 / self.pulse_params[1]**2 \
                     * 2.0 * np.log(2.0)) * np.cos(self.pulse_params[2]*self.t + self.pulse_params[3]))
                 if self.add_pulse_direction == 0:
-                    mf[0:self.nmodes*3:3] += Ex * self.transition_photon_dipole
+                    mf[0:self.nmodes*3:3] += Ex * self.transition_photon_charge
                 elif self.add_pulse_direction == 1:
-                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_dipole
+                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
+    '''
+    def add_pulse(self, mf):
+        if self.have_incoming_pulse:
+            self.t += self.dt
+            if self.t > self.pulse_params[4] and self.t < self.pulse_params[4] + self.pulse_params[1]*4.0:
+                t = self.t - self.pulse_params[4] #- self.pulse_params[1]*4.0
+                Ex = np.sum(self.pulse_params[0] * np.exp(-t**2 / self.pulse_params[1]**2 \
+                    * 2.0 * np.log(2.0)) * np.sin(self.pulse_params[2]*self.t + self.pulse_params[3]))
+                if self.add_pulse_direction == 0:
+                    mf[0:self.nmodes*3:3] += Ex * self.transition_photon_charge
+                elif self.add_pulse_direction == 1:
+                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
 
     def add_cw(self, mf, phase):
         if self.have_incoming_cw:
@@ -164,9 +177,9 @@ class photons:
                 if self.t > self.cw_params[3] and self.t < self.cw_params[4]:
                     Ex = self.cw_params[0] * np.cos(self.cw_params[1]*self.t + self.cw_params[2])
                     if self.add_cw_direction == 0:
-                        mf[0:self.nmodes*3:3] += Ex * self.transition_photon_dipole
+                        mf[0:self.nmodes*3:3] += Ex * self.transition_photon_charge
                     elif self.add_cw_direction == 1:
-                        mf[self.nmodes*3+1::3] += Ex * self.transition_photon_dipole
+                        mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
             else:
                 if phase is None:
                     for cw_params in self.cw_params:
@@ -182,9 +195,9 @@ class photons:
                     if self.t > cw_params[3] and self.t < cw_params[4]:
                         Ex += np.sum(cw_params[0] * np.cos(cw_params[1]*self.t + cw_params[2]))
                 if self.add_cw_direction == 0:
-                    mf[0:self.nmodes*3:3] += Ex * self.transition_photon_dipole
+                    mf[0:self.nmodes*3:3] += Ex * self.transition_photon_charge
                 elif self.add_cw_direction == 1:
-                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_dipole
+                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
 
 
     def obtain_potential(self):
