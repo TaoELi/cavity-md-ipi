@@ -256,7 +256,6 @@ Apart from the definition of the effective dipole moment (or the effective charg
   "add_cw_photon" : true,
   "add_cw_direction": 0,
   "cw_params": [6e-3, 2405.0, 3.14, 100.0, 600.0],
-  "cw_atoms": [-1],
   "dt" : 0.5,
 ```
 
@@ -266,7 +265,6 @@ Similarly, we can define the Gaussian pulse as
   "add_pulse_photon" : true,
   "add_pulse_direction": 0,
   "pulse_params": [1.0, 10.0, 3550.0, 3.14, 20.0],
-  "pulse_atoms": [0, 1, 2],
   "dt" : 0.5,
 ```
 Note that "add_pulse_direction" will control the external excitation of either the x-polarized (with "add_pulse_direction": 0) or the y-polarized (with "add_pulse_direction": 1) cavity mode.
