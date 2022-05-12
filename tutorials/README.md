@@ -233,7 +233,7 @@ Apart from the above **cw** pulse, one can also define a **Gaussian** pulse. A t
   "pulse_atoms": [0, 1, 2],
   "dt" : 0.5,
 ```
-Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0)^2/tau^2] \* sin(omega\*t + phi). The above parameters are Amp=1.0 a.u., tau = 10.0 fs, omega=3550.0 cm-1, phi=3.14, t0 = 20.0 fs. The Gaussian pulse will be turned on t0 and will be turned off at t0 + 4\*tau.
+Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0)^2/tau^2] \* sin(omega\*t + phi). The above parameters are Amp=1.0 a.u., tau = 10.0 fs, omega=3550.0 cm-1, phi=3.14, t0 = 20.0 fs. The Gaussian pulse will be turned on at t0 and will be turned off at t0 + 4\*tau.
 
 ### Pulse excitation on cavity modes
 
