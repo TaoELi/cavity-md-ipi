@@ -9,8 +9,8 @@
 4. [Advanced CavMD simulations](#advanced-cavmd-simulations)
   - [Multiple Rabi splitting](#multiple-rabi-splitting)
   - [Going beyond water simulation](#going-beyond-water-simulation)
-  - [Pulse excitation on molecules](#pulse-excitation)
-  - [Pulse excitation on cavity modes](#pulse-excitation)
+  - [Pulse excitation on molecules](#pulse-excitation-on-molecules)
+  - [Pulse excitation on cavity modes](#pulse-excitation-on-cavity-modes)
   - [Adding cavity loss](#adding-cavity-loss)
 5. [Additional CavMD simulations](#additional-cavmd-simulations)
 
