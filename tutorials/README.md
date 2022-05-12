@@ -237,7 +237,7 @@ Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0)^2/tau^2] \* s
 
 ### Pulse excitation on cavity modes
 
-Similar as external pulse excitation on molecules, we can also use a time-dependent external pulse to drive the cavity modes. However, unlike the molecules which have well-defined dipole moments, the "dipole moment" of cavity modes is not well-defined within our model. Hence, in order to drive the cavity modes with an external field, we to first define the effective dipole moment of the cavity modes. Currently, the effective dipole moment of the cavity modes is defined as
+Similar as external pulse excitation on molecules, we can also use a time-dependent external pulse to drive the cavity modes. However, unlike the molecules which have well-defined dipole moments, the "dipole moment" of cavity modes is not well-defined within our model. Hence, in order to drive the cavity modes with an external field, we need to first define the effective dipole moment of the cavity modes. Currently, the effective dipole moment of the cavity modes is defined as
 
 d_c = Q_c q_c,
 
@@ -269,6 +269,7 @@ Similarly, we can define the Gaussian pulse as
   "pulse_atoms": [0, 1, 2],
   "dt" : 0.5,
 ```
+Note that "add_pulse_direction" will control the external excitation of either the x-polarized (with "add_pulse_direction": 0) or the y-polarized (with "add_pulse_direction": 1) cavity mode.
 
 All the controlling parameters are defined in a similar way as above.
 
