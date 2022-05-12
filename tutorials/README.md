@@ -9,7 +9,8 @@
 4. [Advanced CavMD simulations](#advanced-cavmd-simulations)
   - [Multiple Rabi splitting](#multiple-rabi-splitting)
   - [Going beyond water simulation](#going-beyond-water-simulation)
-  - [Pulse excitation](#pulse-excitation)
+  - [Pulse excitation on molecules](#pulse-excitation)
+  - [Pulse excitation on cavity modes](#pulse-excitation)
   - [Adding cavity loss](#adding-cavity-loss)
 5. [Additional CavMD simulations](#additional-cavmd-simulations)
 
@@ -190,7 +191,7 @@ The above definition is OK if the molecules are water molecules (**init.xyz** re
 ```
 Here, the option "charge_array" will redefine the partial charge of each atom in the order of configurations. The number of partial charges should match the number of atoms in the simulations.
 
-### Pulse excitation
+### Pulse excitation on molecules
 We can simulate a pulse excitation when **photon_params.json** file is defined as follows:
 ```json
 {
@@ -224,8 +225,6 @@ Here,
 
 5. "dt" defines the time step of simulation. Here, we use 0.5 fs. The default value is also 0.5.
 
-6. Additionally, one can also define "t0", meaning the starting time of simulation. By comparing the starting time t0 with the pulse turning on or off time (t<sub>start</sub> or t<sub>end</sub>), we can control how long the molecules can be exposed to the pulse. The default value of "t0" is 0 so it is not defined above.
-
 Apart from the above **cw** pulse, one can also define a **Gaussian** pulse. A typical Gaussian pulse definition is
 ```json
   "add_pulse" : true,
@@ -234,7 +233,44 @@ Apart from the above **cw** pulse, one can also define a **Gaussian** pulse. A t
   "pulse_atoms": [0, 1, 2],
   "dt" : 0.5,
 ```
-Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0-4\*tau)^2/tau^2] \* cos(omega\*t + phi). The above parameters are Amp=1.0 a.u., tau = 10.0 fs, omega=3550.0 cm-1, phi=3.14, t0 = 20.0 fs. The Gaussian pulse will be applied at t0 and will be turned off at t0 + 8\*tau.
+Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0)^2/tau^2] \* sin(omega\*t + phi). The above parameters are Amp=1.0 a.u., tau = 10.0 fs, omega=3550.0 cm-1, phi=3.14, t0 = 20.0 fs. The Gaussian pulse will be turned on t0 and will be turned off at t0 + 4\*tau.
+
+### Pulse excitation on cavity modes
+
+Similar as external pulse excitation on molecules, we can also use a time-dependent external pulse to drive the cavity modes. However, unlike the molecules which have well-defined dipole moments, the "dipole moment" of cavity modes is not well-defined within our model. Hence, in order to drive the cavity modes with an external field, we to first define the effective dipole moment of the cavity modes. Currently, the effective dipole moment of the cavity modes is defined as
+
+<img src="https://latex.codecogs.com/svg.latex? d_c = Q_c \tilde{q}_c" />,
+
+where <img src="https://latex.codecogs.com/svg.latex? Q_c" /> denotes the effective charge of the cavity modes and can be defined as
+
+```json
+  "transition_photon_charge" : 0.05
+```
+in the atomic units. With this definition, the force of the external field on the cavity modes is simply
+
+<img src="https://latex.codecogs.com/svg.latex? F_{ext}(t) = Q_c E(t)" />.
+
+Apart from the definition of the effective dipole moment (or the effective charge) of the cavity modes, the parameters for controlling the cw wave  is similar as above:
+```json
+  "transition_photon_charge" : 0.05,
+  "add_cw_photon" : true,
+  "add_cw_direction": 0,
+  "cw_params": [6e-3, 2405.0, 3.14, 100.0, 600.0],
+  "cw_atoms": [-1],
+  "dt" : 0.5,
+```
+
+Similarly, we can define the Gaussian pulse as
+```json
+  "transition_photon_charge" : 0.05,
+  "add_pulse_photon" : true,
+  "add_pulse_direction": 0,
+  "pulse_params": [1.0, 10.0, 3550.0, 3.14, 20.0],
+  "pulse_atoms": [0, 1, 2],
+  "dt" : 0.5,
+```
+
+All the controlling parameters are similar as above.
 
 ### Adding cavity loss
 

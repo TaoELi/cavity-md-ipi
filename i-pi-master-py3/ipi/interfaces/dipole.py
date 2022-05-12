@@ -115,11 +115,11 @@ class dipole:
     def add_pulse(self, mf):
         if self.have_incoming_pulse:
             self.t += self.dt
-            if self.t > self.pulse_params[4] and self.t < self.pulse_params[4] + self.pulse_params[1]*8.0:
+            if self.t > self.pulse_params[4] and self.t < self.pulse_params[4] + self.pulse_params[1]*4.0:
                 self.set_charges()
-                t = self.t - self.pulse_params[4] - self.pulse_params[1]*4.0
+                t = self.t - self.pulse_params[4] #- self.pulse_params[1]*4.0
                 Ex = np.sum(self.pulse_params[0] * np.exp(-t**2 / self.pulse_params[1]**2 \
-                    * 2.0 * np.log(2.0)) * np.cos(self.pulse_params[2]*self.t + self.pulse_params[3]))
+                    * 2.0 * np.log(2.0)) * np.sin(self.pulse_params[2]*self.t + self.pulse_params[3]))
                 mf[self.pulse_atoms_force_index] += Ex * self.charges[self.pulse_atoms]
 
     def add_cw(self, mf):

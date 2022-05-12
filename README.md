@@ -45,17 +45,17 @@ If you directly use the provided code in your simulations, please also cite the 
 
 ## Publications using CavMD:
 
-- Li, T. E., Subotnik, J. E., Nitzan, A. Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. [Proc. Natl. Acad. Sci., 2020, 117(31), 18324–18331](https://doi.org/10.1073/pnas.2009272117). [additional data](https://github.com/TaoELi/cavmd_examples_h2o)
+- Li, T. E., Subotnik, J. E., Nitzan, A. Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. [Proc. Natl. Acad. Sci., 2020, 117 (31), 18324–18331](https://doi.org/10.1073/pnas.2009272117). [additional data](https://github.com/TaoELi/cavmd_examples_h2o)
 
 - Li, T. E.; Nitzan, A.; Subotnik, J. E. Cavity Molecular Dynamics Simulations of Vibrational Polariton-Enhanced Molecular Nonlinear Absorption. [J. Chem. Phys. 2021, 154 (9), 094124](https://doi.org/10.1063/5.0037623). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. [Angew. Chem. Int. Ed. 2021, 60(28), 15533-15540]( https://doi.org/10.1002/anie.202103920). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. [Angew. Chem. Int. Ed. 2021, 60 (28), 15533-15540]( https://doi.org/10.1002/anie.202103920). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
 
 - Li, T. E.; Nitzan, A.; Subotnik, J. E. Energy-efficient pathway for selectively exciting solute molecules to high vibrational states via solvent vibration-polariton pumping. [arXiv. 2021](https://arxiv.org/abs/2104.15121). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Polariton relaxation under vibrational strong coupling: Comparing cavity molecular dynamics simulations against Fermi's golden rule rate. [arXiv. 2021](https://https://arxiv.org/abs/2111.12770). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Polariton relaxation under vibrational strong coupling: Comparing cavity molecular dynamics simulations against Fermi's golden rule rate. [J. Chem. Phys. 2022, 156 (13), 134106](https://doi.org/10.1063/5.0079784). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
 
-- Li, T. E., Nitzan, A., Hammes-Schiffer, S., Subotnik, J. E. Quantum Simulations of Vibrational Strong Coupling via Path Integrals. [arXiv:2203.03001, 2022](https://arxiv.org/abs/2203.03001). [additional code](https://github.com/TaoELi/cavmd_examples_h2o)
+- Li, T. E., Nitzan, A., Hammes-Schiffer, S., Subotnik, J. E. Quantum Simulations of Vibrational Strong Coupling via Path Integrals. [J. Phys. Chem. Lett. 2022, 13 (17), 3890–3895](https://doi.org/10.1021/acs.jpclett.2c00613). [additional code](https://github.com/TaoELi/cavmd_examples_h2o)
 
 ## Implementation
 
