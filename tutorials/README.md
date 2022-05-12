@@ -239,16 +239,16 @@ Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0)^2/tau^2] \* s
 
 Similar as external pulse excitation on molecules, we can also use a time-dependent external pulse to drive the cavity modes. However, unlike the molecules which have well-defined dipole moments, the "dipole moment" of cavity modes is not well-defined within our model. Hence, in order to drive the cavity modes with an external field, we to first define the effective dipole moment of the cavity modes. Currently, the effective dipole moment of the cavity modes is defined as
 
-<img src="https://latex.codecogs.com/svg.latex? d_c = Q_c \tilde{q}_c" />,
+d_c = Q_c q_c,
 
-where <img src="https://latex.codecogs.com/svg.latex? Q_c" /> denotes the effective charge of the cavity modes and can be defined as
+where q_c denotes the coordinate of the cavity mode, Q_c denotes the effective charge of the cavity mode and can be defined as
 
 ```json
   "transition_photon_charge" : 0.05
 ```
 in the atomic units. With this definition, the force of the external field on the cavity modes is simply
 
-<img src="https://latex.codecogs.com/svg.latex? F_{ext}(t) = Q_c E(t)" />.
+F_ext(t) = Q_c E(t).
 
 Apart from the definition of the effective dipole moment (or the effective charge) of the cavity modes, the parameters for controlling the cw wave  is similar as above:
 ```json
@@ -270,7 +270,7 @@ Similarly, we can define the Gaussian pulse as
   "dt" : 0.5,
 ```
 
-All the controlling parameters are similar as above.
+All the controlling parameters are defined in a similar way as above.
 
 ### Adding cavity loss
 
