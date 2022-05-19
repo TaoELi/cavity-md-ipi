@@ -93,8 +93,8 @@ If everything works fine, you will find the output looks like "~/loca/bin/lmp".
 
 After the installation of **i-pi** and **LAMMPS**, we can run CavMD simulations. In general, the [equations of motion of CavMD](https://doi.org/10.1073/pnas.2009272117) are defined as follows:
 
-<center> <img src="https://render.githubusercontent.com/render/math?math=M_{nj}\ddot{\mathbf{R}}_{nj} = \mathbf{F}_{nj}^{(0)} %2B \mathbf{F}_{nj}^{\text{cav}}">, </center>
-<center> <img src="https://render.githubusercontent.com/render/math?math=m_{k\lambda}\ddot{\tilde{\tilde{q}}}_{k\lambda} = - m_{k\lambda}\omega_{k\lambda}^2 \tilde{\tilde{q}}_{k\lambda} - \tilde{\varepsilon}_{k\lambda} d_{\lambda}">. </center>
+<center> <img src="https://render.githubusercontent.com/render/math?math=M_{nj}\ddot{\mathbf{R}}_{nj} = \mathbf{F}_{nj}^{(0)} %2B \mathbf{F}_{nj}^{\text{cav}},"> </center>
+<center> <img src="https://render.githubusercontent.com/render/math?math=m_{k\lambda}\ddot{\tilde{\tilde{q}}}_{k\lambda} = - m_{k\lambda}\omega_{k\lambda}^2 \tilde{\tilde{q}}_{k\lambda} - \tilde{\varepsilon}_{k\lambda} d_{\lambda}."> </center>
 
 Here, <img src="https://render.githubusercontent.com/render/math?math=M_{nj}"> and <img src="https://render.githubusercontent.com/render/math?math=\mathbf{R}_{nj}"> denotes the mass and position of each nucleus indexed by <img src="https://render.githubusercontent.com/render/math?math=nj">. <img src="https://render.githubusercontent.com/render/math?math=\mathbf{F}_{nj}^{(0)}"> denotes the conventional nuclear force outside the cavity, and <img src="https://render.githubusercontent.com/render/math?math=\mathbf{F}_{nj}^{\text{cav}}"> denotes the force acting on each nucleus due to the interaction with the cavity modes. <img src="https://render.githubusercontent.com/render/math?math=m_{k\lambda}">, <img src="https://render.githubusercontent.com/render/math?math=\tilde{\tilde{q}}_{k\lambda}">, and <img src="https://render.githubusercontent.com/render/math?math=\omega_{k\lambda}"> denote auxiliary mass, position, and frequency for the cavity photon
 mode defined by a wave vector <img src="https://render.githubusercontent.com/render/math?math=\mathbf{k}"> and polarization direction <img src="https://render.githubusercontent.com/render/math?math=\mathbf{\xi}_{\lambda}">. By default, the cavity mode(s) polarizes along either the <img src="https://render.githubusercontent.com/render/math?math=x"> or <img src="https://render.githubusercontent.com/render/math?math=y"> direction. Finally, <img src="https://render.githubusercontent.com/render/math?math=\tilde{\varepsilon}_{k\lambda}"> denotes the effective coupling strength between the cavity mode(s) and each molecule, and <img src="https://render.githubusercontent.com/render/math?math=d_{\lambda}"> denotes the ground-state  dipole moment for the whole molecular system along the direction of <img src="https://render.githubusercontent.com/render/math?math=\lambda = x,y">.
@@ -260,7 +260,7 @@ Apart from the above **cw** pulse, one can also define a **Gaussian** pulse. A t
 ```
 Here, the Gaussian pulse takes the form:
 
-<center> <img src="https://render.githubusercontent.com/render/math?math=E(t) = A \exp\left [-2\ln(2)\frac{(t - t_0)^2}{\tau^2}\right ]\sin(\omega t %2B \phi)">. </center>
+<center> <img src="https://render.githubusercontent.com/render/math?math=E(t) = A \exp\left [-2\ln(2)\frac{(t - t_0)^2}{\tau^2}\right ]\sin(\omega t %2B \phi)."> </center>
 
 The above parameters are <img src="https://render.githubusercontent.com/render/math?math=A">=1.0 a.u., <img src="https://render.githubusercontent.com/render/math?math=\tau"> = 10.0 fs, <img src="https://render.githubusercontent.com/render/math?math=\omega">=3550.0 cm<sup>-1</sup>, <img src="https://render.githubusercontent.com/render/math?math=\phi">=3.14, <img src="https://render.githubusercontent.com/render/math?math=t_0"> = 20.0 fs. The Gaussian pulse will be turned on at <img src="https://render.githubusercontent.com/render/math?math=t_0"> and will be turned off at <img src="https://render.githubusercontent.com/render/math?math=t_0\%2B 4\tau">.
 
@@ -268,7 +268,7 @@ The above parameters are <img src="https://render.githubusercontent.com/render/m
 
 Similar as external pulse excitation on molecules, we can also use a time-dependent external pulse to drive the cavity modes. However, unlike the molecules which have well-defined dipole moments, the "dipole moment" of cavity modes is not well-defined within our model. Hence, in order to drive the cavity modes with an external field, we need to first define the effective dipole moment of the cavity modes. Currently, the effective dipole moment of the cavity modes is defined as
 
-<center> <img src="https://render.githubusercontent.com/render/math?math=d_c = Q_c \tilde{\tilde{q}}_c">, </center>
+<center> <img src="https://render.githubusercontent.com/render/math?math=d_c = Q_c \tilde{\tilde{q}}_c,"> </center>
 
 where <img src="https://render.githubusercontent.com/render/math?math=\tilde{\tilde{q}}_c"> denotes the coordinate of the cavity mode(s), <img src="https://render.githubusercontent.com/render/math?math=Q_c"> denotes the effective charge of the cavity mode(s) and can be defined by
 
@@ -277,7 +277,7 @@ where <img src="https://render.githubusercontent.com/render/math?math=\tilde{\ti
 ```
 in the atomic units. With this definition, the force of the external field on the cavity modes is simply
 
-<center> <img src="https://render.githubusercontent.com/render/math?math=F_{\text{ext}}(t) = Q_c E(t)">, </center>
+<center> <img src="https://render.githubusercontent.com/render/math?math=F_{\text{ext}}(t) = Q_c E(t),"> </center>
 
 where <img src="https://render.githubusercontent.com/render/math?math=E(t)"> denotes the external time-dependent field.
 
