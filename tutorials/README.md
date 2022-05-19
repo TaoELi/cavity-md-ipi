@@ -91,7 +91,15 @@ If everything works fine, you will find the output looks like "~/loca/bin/lmp".
 
 ## First CavMD simulation
 
-After the installation of **i-pi** and **LAMMPS**, we can run CavMD simulations. In the folder of this README, please go to [**Rabi_splitting/**](Rabi_splitting/) and run
+After the installation of **i-pi** and **LAMMPS**, we can run CavMD simulations. In general, the [equations of motion of CavMD](https://doi.org/10.1073/pnas.2009272117) are defined as follows:
+
+<center> <img src="https://render.githubusercontent.com/render/math?math=M_{nj}\ddot{\mathbf{R}}_{nj} = \mathbf{F}_{nj}^{(0)} %2B \mathbf{F}_{nj}^{\text{cav}}">, </center>
+<center> <img src="https://render.githubusercontent.com/render/math?math=m_{k\lambda}\ddot{\tilde{\tilde{q}}}_{k\lambda} = - m_{k\lambda}\omega_{k\lambda}^2 \tilde{\tilde{q}}_{k\lambda} - \tilde{\varepsilon}_{k\lambda} d_{\lambda}">. </center>
+
+Here, <img src="https://render.githubusercontent.com/render/math?math=M_{nj}"> and <img src="https://render.githubusercontent.com/render/math?math=\mathbf{R}_{nj}"> denotes the mass and position of each nucleus indexed by <img src="https://render.githubusercontent.com/render/math?math=nj">. <img src="https://render.githubusercontent.com/render/math?math=\mathbf{F}_{nj}^{(0)}"> denotes the conventional nuclear force outside the cavity, and <img src="https://render.githubusercontent.com/render/math?math=\mathbf{F}_{nj}^{\text{cav}}"> denotes the force acting on each nucleus due to the interaction with the cavity modes. <img src="https://render.githubusercontent.com/render/math?math=m_{k\lambda}">, <img src="https://render.githubusercontent.com/render/math?math=\tilde{\tilde{q}}_{k\lambda}">, and <img src="https://render.githubusercontent.com/render/math?math=\omega_{k\lambda}"> denote auxiliary mass, position, and frequency for the cavity photon
+mode defined by a wave vector <img src="https://render.githubusercontent.com/render/math?math=\mathbf{k}"> and polarization direction <img src="https://render.githubusercontent.com/render/math?math=\mathbf{\xi}_{\lambda}">. By default, the cavity mode(s) polarizes along either the <img src="https://render.githubusercontent.com/render/math?math=x"> or <img src="https://render.githubusercontent.com/render/math?math=y"> direction. Finally, <img src="https://render.githubusercontent.com/render/math?math=\tilde{\varepsilon}_{k\lambda}"> denotes the effective coupling strength between the cavity mode(s) and each molecule, and <img src="https://render.githubusercontent.com/render/math?math=d_{\lambda}"> denotes the ground-state  dipole moment for the whole molecular system along the direction of <img src="https://render.githubusercontent.com/render/math?math=\lambda = x,y">.
+
+With the equations of motion in mind, let us try to run the first CavMD simulations. In the folder of this README, please go to [**Rabi_splitting/**](Rabi_splitting/) and run
 <pre><code> i-pi input_traj_1.xml </code></pre> then open a new terminal and run <pre><code>lmp < in.lmp </code></pre> After a while (< 0.5 h), you will finish a single 20ps-trajectory simulation of liquid water under vibrational strong coupling. And you can use any software you like to plot the IR spectrum from the xyz trajectory. Note that because only the x- and y-direction are coupled to the cavity, when calculating IR spectrum of liquid water, please only do Fourier transform for <img src="https://latex.codecogs.com/svg.latex?\left\langle%20\mu_x(0)\mu_x(t)\right\rangle" /> or <img src="https://latex.codecogs.com/svg.latex?\left\langle%20\mu_y(0)\mu_y(t)\right\rangle" /> to obtain the IR spectrum, where <img src="https://latex.codecogs.com/svg.latex?\mu_x(t)" /> denotes the total dipole moment along <img src="https://latex.codecogs.com/svg.latex?x" /> direction. Alternatively, please run
 <pre><code>python3 collect_all_data_N.py ./
 </code></pre>
@@ -112,8 +120,6 @@ When rerunning an i-pi job, sometimes one can encounter the following error (the
 This error means that previously the same job was terminated unnaturally, or the same job is running in the same machine. When rerunning the same job, i-pi finds that a file called */tmp/ipi_h2o-pimd.1.run_NVE.E0_4e-4* exists so i-pi decides not to continue the simulation. In order to solve this issue, one can simply delete this file and rerun the job.
 
 Note that the existence of this file guarantees that the same job cannot be run at the same time, so that one avoids potential communication issues. When a job is done, this file is automatically deleted, and rerunning again won't encounter this issue.
-
-
 
 
 ## Input file structure of CavMD
@@ -172,7 +178,8 @@ These information are mandatory for cavity MD simulations:
 - "apply_photon" denotes whether including cavity effects or not.
 - "eff_mass" denotes the effective mass of photons, which is taken as 1.0 a.u. (atomic units) for convenience.
 - "freqs_cm" denotes the frequency of the fundamental photon mode in units of wave number.
-- "E0" denotes <img src="https://latex.codecogs.com/svg.latex?\tilde{\varepsilon}" /> (effective coupling strength in units of a.u.) for the fundamental photon mode; see [here](https://arxiv.org/abs/2004.04888) for details.
+- "E0" denotes <img src="https://render.githubusercontent.com/render/math?math=\tilde{\varepsilon}"> (effective coupling strength in units of a.u.) for the fundamental photon mode; see [here](https://arxiv.org/abs/2004.04888) for details.
+
 
 ## Advanced CavMD simulations
 ### Multiple Rabi splitting
@@ -233,7 +240,11 @@ Here,
 
 2. "add_cw_direction" = 0/1/2 defines the polarization direction of the pulse (0->x, 1->y, 2->z). The default value is 0.
 
-3. The cw pulse takes the form of Amp\*cos(omga\*t + phi) between t=t<sub>start</sub> and t=t<sub>end</sub>. The corresponding parameters are defined as "cw_params": [6e-3, 2405.0, 3.14, 100.0, 600.0], meaning that Amp=6e-3 a.u., omega=2405.0 cm<sup>-1</sup>, phi=3.14, t<sub>start</sub>=100 fs and t<sub>end</sub>=600 fs. The default value is [1e-3, 3550.0, 3.14, 10.0, 1e4].
+3. The cw pulse takes the form of
+
+<center> <img src="https://render.githubusercontent.com/render/math?math=E(t) = A \cos(\omega t %2B \phi)"> </center>
+
+between t=t<sub>start</sub> and t=t<sub>end</sub>. The corresponding parameters are defined as "cw_params": [6e-3, 2405.0, 3.14, 100.0, 600.0], meaning that <img src="https://render.githubusercontent.com/render/math?math=A">=6e-3 a.u., <img src="https://render.githubusercontent.com/render/math?math=\omega">=2405.0 cm<sup>-1</sup>, <img src="https://render.githubusercontent.com/render/math?math=\phi">=3.14, t<sub>start</sub>=100 fs and t<sub>end</sub>=600 fs. The default value is [1e-3, 3550.0, 3.14, 10.0, 1e4].
 
 4. "cw_atoms" defines which molecule(s) interact with this pulse. "cw_atoms": [-1] means that *all* nuclei interacts with the pulse. If one wants to artificially excite only part of the molecular system, "cw_atoms" can take the value of, e.g., [0, 1, 2], meaning that the first three nuclei are excited while all other nuclei do not feel this pulse. The default value is [0, 1, 2].
 
@@ -247,22 +258,28 @@ Apart from the above **cw** pulse, one can also define a **Gaussian** pulse. A t
   "pulse_atoms": [0, 1, 2],
   "dt" : 0.5,
 ```
-Here, the Gaussian pulse takes the form: Amp\* exp[-2ln(2)\*(t-t0)^2/tau^2] \* sin(omega\*t + phi). The above parameters are Amp=1.0 a.u., tau = 10.0 fs, omega=3550.0 cm-1, phi=3.14, t0 = 20.0 fs. The Gaussian pulse will be turned on at t0 and will be turned off at t0 + 4\*tau.
+Here, the Gaussian pulse takes the form:
+
+<center> <img src="https://render.githubusercontent.com/render/math?math=E(t) = A \exp\left [-2\ln(2)\frac{(t - t_0)^2}{\tau^2}\right ]\sin(\omega t %2B \phi)">. </center>
+
+The above parameters are <img src="https://render.githubusercontent.com/render/math?math=A">=1.0 a.u., <img src="https://render.githubusercontent.com/render/math?math=\tau"> = 10.0 fs, <img src="https://render.githubusercontent.com/render/math?math=\omega">=3550.0 cm<sup>-1</sup>, <img src="https://render.githubusercontent.com/render/math?math=\phi">=3.14, <img src="https://render.githubusercontent.com/render/math?math=t_0"> = 20.0 fs. The Gaussian pulse will be turned on at <img src="https://render.githubusercontent.com/render/math?math=t_0"> and will be turned off at <img src="https://render.githubusercontent.com/render/math?math=t_0\%2B 4\tau">.
 
 ### Pulse excitation on cavity modes
 
 Similar as external pulse excitation on molecules, we can also use a time-dependent external pulse to drive the cavity modes. However, unlike the molecules which have well-defined dipole moments, the "dipole moment" of cavity modes is not well-defined within our model. Hence, in order to drive the cavity modes with an external field, we need to first define the effective dipole moment of the cavity modes. Currently, the effective dipole moment of the cavity modes is defined as
 
-d_c = Q_c q_c,
+<center> <img src="https://render.githubusercontent.com/render/math?math=d_c = Q_c \tilde{\tilde{q}}_c">, </center>
 
-where q_c denotes the coordinate of the cavity mode, Q_c denotes the effective charge of the cavity mode and can be defined as
+where <img src="https://render.githubusercontent.com/render/math?math=\tilde{\tilde{q}}_c"> denotes the coordinate of the cavity mode(s), <img src="https://render.githubusercontent.com/render/math?math=Q_c"> denotes the effective charge of the cavity mode(s) and can be defined by
 
 ```json
   "transition_photon_charge" : 0.05
 ```
 in the atomic units. With this definition, the force of the external field on the cavity modes is simply
 
-F_ext(t) = Q_c E(t).
+<center> <img src="https://render.githubusercontent.com/render/math?math=F_{\text{ext}}(t) = Q_c E(t)">, </center>
+
+where <img src="https://render.githubusercontent.com/render/math?math=E(t)"> denotes the external time-dependent field.
 
 Apart from the definition of the effective dipole moment (or the effective charge) of the cavity modes, the parameters for controlling the cw wave  is similar as above:
 ```json
