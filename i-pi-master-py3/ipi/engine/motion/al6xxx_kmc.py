@@ -334,7 +334,7 @@ class AlKMC(Motion):
         while self.feval.sum() == 0: # if all evaluators are busy, wait for one to get free
             for st in ethreads:
                 st.join(1e-2)
-                if st is None or not st.isAlive():
+                if st is None or not st.is_alive():
                     break
         with self._threadlock:
             # finds free evaluator
@@ -480,7 +480,7 @@ class AlKMC(Motion):
                 levents.append( nevent )
         # wait for all evaluators to finish
         for st in ethreads:
-            while not st is None and st.isAlive():
+            while not st is None and st.is_alive():
                 st.join(2)
 
         print("Computed ", len(levents), " possible reactions. Cache len ", len(self.ecache))

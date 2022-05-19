@@ -581,7 +581,7 @@ ulation.py	(original)
                      # fetch energy from previous calculation
                      nevent = [svac, sneigh, self.ecache[nstr], self.qcache[nstr], 0.0]
 @@ -479,17 +479,17 @@
-             while not st is None and st.isAlive():
+             while not st is None and st.is_alive():
                  st.join(2)
  
 -        print "Computed ", len(levents), " possible reactions. Cache len ", len(self.ecache)
