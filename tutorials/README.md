@@ -293,6 +293,19 @@ This feature is now available in CavMD. To do it, we need to slightly modify the
 
 Here, we introduce a new thermostat "cavloss_langevin" in NVT simulations, which adds a Langevin thermal bath to the cavity photons only, and &lt;tau units='femtosecond'> defines the magnitude of cavity lifetime (inverse of loss) in the units of fs (which is 1000 fs in the above system).
 
+Similarly, the following thermostat "cavloss_multilangevin" introduces two different Langevin thermal baths to the molecular system (with a lifetime defined by **tau_m**) and cavity modes (with a lifetime defined by **tau_l**). This new feature can give the users more flexibility for controlling the lossy channels.
+```xml
+<motion mode='dynamics'>
+  <dynamics mode='nvt'>
+    <timestep units='femtosecond'> 0.5 </timestep>
+    <thermostat mode='cavloss_multilangevin'>
+      <tau_m units='femtosecond'> 1000 </tau_m>
+      <tau_l units='femtosecond'> 100 </tau_l>
+    </thermostat>
+  </dynamics>
+</motion>
+```
+
 ## Additional CavMD simulations
 The input and post-processing files for all publications of CavMD are stored in the following two Github projects:
 
