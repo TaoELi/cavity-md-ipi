@@ -6,7 +6,7 @@ import numpy as np
 import os
 import json
 import subprocess
-from .fdtd import fdtd1d
+#from .fdtd import fdtd1d
 
 class dipole:
     def __init__(self):
