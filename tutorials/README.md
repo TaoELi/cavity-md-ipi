@@ -16,7 +16,9 @@
 
 ## Installation
 
-1. Install the modified i-pi (in folder ../i-pi-master-py3/) package on your personal Linux computer or goverment supercomputer (e.g., NERSC); see [here](http://ipi-code.org/resources/documentation/) for a guide. Here, the simplest installation method is provided. We need to work under a python3 (<= 3.8) environment.
+1. Install the modified i-pi (in folder ../i-pi-master-py3/) package on your personal Linux computer or goverment supercomputer (e.g., NERSC); see [here](http://ipi-code.org/resources/documentation/) for a guide. Here, the simplest installation method is provided.
+
+(Before installation) I strongly suggest the readers to install Anaconda or Miniconda (https://docs.conda.io/en/latest/miniconda.html) before installing i-pi for better experience. Python 3 (up to 3.9) is needed for simulation.
 
   Please open a terminal
 ```bash
@@ -100,6 +102,18 @@ python3 plot_single_IR.py
 to obtain the following Rabi splitting spectrum:
 ![Drag Racing](Rabi_splitting/IR_single_ref.png)
 As shown above, outside the cavity, the wide O-H stretch (~3550 cm<sup>-1</sup>) peak (black line) is split to two peaks: the lower polariton (LP) peak and the upper polariton (UP) peaks. This peak splitting, as called the Rabi splitting, forms the signature of VSC.
+
+### Possible error message during simulation
+
+When rerunning an i-pi job, sometimes one can encounter the following error (the last line of the error message):
+
+*RuntimeError: Error opening unix socket. Check if a file /tmp/ipi_h2o-pimd.1.run_NVE.E0_4e-4 exists, and remove it if unused.*
+
+This error means that previously the same job was terminated unnaturally, or the same job is running in the same machine. When rerunning the same job, i-pi finds that a file called */tmp/ipi_h2o-pimd.1.run_NVE.E0_4e-4* exists so i-pi decides not to continue the simulation. In order to solve this issue, one can simply delete this file and rerun the job.
+
+Note that the existence of this file guarantees that the same job cannot be run at the same time, so that one avoids potential communication issues. When a job is done, this file is automatically deleted, and rerunning again won't encounter this issue.
+
+
 
 
 ## Input file structure of CavMD
