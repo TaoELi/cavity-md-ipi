@@ -8,11 +8,29 @@ CavMD is an approach to simulate **coupled photon-nuclear dynamics for realistic
 
 This approach is still under development and more features will be reported and updated in the near future.
 
-## What can CavMD do NOW?
+#### What can CavMD do NOW?
 
 - Propagating **nonreactive, classical** molecular dynamics under VSC for both isolated and condensed-phase molecules, where cavity loss or external laser pumping can be included.
 
 - Propagating **nonreactive, quantum** molecular dynamics under VSC via path integrals.
+
+## System Requirement
+
+#### Hardware Requirements
+
+A modern personal laptop with
+RAM: 8+ GB
+CPU: 4+ cores
+
+#### Software Requirements
+
+##### OS Requirments
+CavMD has been tested on the following operating systems:
+- Linux: Ubuntu 20.04 or Centos 7.0
+- Mac OS Monterey with M1 chip
+
+##### Other software environment
+Installing Anaconda or Miniconda (https://docs.conda.io/en/latest/miniconda.html) with Python 3 (up to 3.9) before installing this package.
 
 ## How to use CavMD?
 
