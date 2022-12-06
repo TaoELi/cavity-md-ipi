@@ -51,7 +51,7 @@ class InputThermoBase(Input):
     """
 
     attribs = {"mode": (InputAttribute, {"dtype": str,
-                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl", "ffl", "cavloss_langevin", "multilangevin"],
+                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl", "ffl", "cavloss_langevin", "cavloss_multilangevin"],
                                          "help": "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'ffl' is the fast-forward langevin thermostat, in which momenta are flipped back whenever the action of the thermostat changes its direction. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          })}
     fields = {"ethermo": (InputValue, {"dtype": float,
@@ -91,7 +91,17 @@ class InputThermoBase(Input):
                                     "dimension": "time"}),
               "flip": (InputValue, {"dtype": str,
                                     "default": "rescale",
-                                    "help": "Flipping type for ffl thermostat ('soft', 'hard', 'rescale', 'none')"})
+                                    "help": "Flipping type for ffl thermostat ('soft', 'hard', 'rescale', 'none')"}),
+              # Tao E. Li modification 2021/09/28
+              "tau_m": (InputValue, {"dtype": float,
+                                   "default": 0.0,
+                                   "help": "The friction coefficient for white noise thermostats.",
+                                   "dimension": "time"}),
+              "tau_l": (InputValue, {"dtype": float,
+                                   "default": 0.0,
+                                   "help": "The friction coefficient for white noise thermostats.",
+                                   "dimension": "time"})
+              # end of Tao E. Li modification 2021/09/28
               }
 
     dynamic = {}
@@ -156,8 +166,8 @@ class InputThermoBase(Input):
         elif type(thermo) is ethermostats.ThermoCavLossLangevin:
             self.mode.store("cavloss_langevin")
             self.tau.store(thermo.tau)
-        elif type(thermo) is ethermostats.ThermoMultiLangevin:
-            self.mode.store("multilangevin")
+        elif type(thermo) is ethermostats.ThermoCavLossMultiLangevin:
+            self.mode.store("cavloss_multilangevin")
             self.tau_m.store(thermo.tau_m)
             self.tau_l.store(thermo.tau_l)
         elif type(thermo) is ethermostats.Thermostat:
@@ -212,6 +222,10 @@ class InputThermoBase(Input):
         elif self.mode.fetch() == "cavloss_langevin":
             thermo = ethermostats.ThermoCavLossLangevin(tau=self.tau.fetch())
         # End with Tao E. Li's modifications
+        # Start with Tao E. Li's modifications 2021/09/28
+        elif self.mode.fetch() == "cavloss_multilangevin":
+            thermo = ethermostats.ThermoCavLossMultiLangevin(tau_m=self.tau_m.fetch(), tau_l=self.tau_l.fetch())
+        # End with Tao E. Li's modifications
         elif self.mode.fetch() == "":
             thermo = ethermostats.Thermostat()
         else:
@@ -241,6 +255,9 @@ class InputThermoBase(Input):
                 raise ValueError("The automatic parameter adjustment time scale must be set to a non-negative value")
         if mode in ["gle", "nm_gle", "nm_gle_g"]:
             pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
+        if mode in ["cavloss_multilangevin"]:
+            if self.tau_m.fetch() < 0 or self.tau_l.fetch() < 0:
+                raise ValueError("The thermostat friction coefficients must be set to positive values")
 
 
 class InputThermo(InputThermoBase):

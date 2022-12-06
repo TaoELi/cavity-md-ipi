@@ -2,6 +2,7 @@
 debug/
 patches/
 legacy/
+.ipynb_checkpoints/
 cavmd_examples/CO2_laserPolariton/
 cavmd_examples/CO2_vib_relaxation/
 cavmd_examples/selective_excite_solute/

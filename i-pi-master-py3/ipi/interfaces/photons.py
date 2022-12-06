@@ -150,13 +150,16 @@ class photons:
     def add_pulse(self, mf):
         if self.have_incoming_pulse:
             self.t += self.dt
-            if self.t > self.pulse_params[4] and self.t < self.pulse_params[4] + self.pulse_params[1]*4.0:
+            if self.t > self.pulse_params[4] and self.t < self.pulse_params[4] + self.pulse_params[1]*2.0:
                 t = self.t - self.pulse_params[4] #- self.pulse_params[1]*4.0
                 Ex = np.sum(self.pulse_params[0] * np.exp(-t**2 / self.pulse_params[1]**2 \
                     * 2.0 * np.log(2.0)) * np.sin(self.pulse_params[2]*self.t + self.pulse_params[3]))
                 if self.add_pulse_direction == 0:
                     mf[0:self.nmodes*3:3] += Ex * self.transition_photon_charge
                 elif self.add_pulse_direction == 1:
+                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
+                elif self.add_pulse_direction == 10:
+                    mf[self.nmodes*3::3] += Ex * self.transition_photon_charge
                     mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
 
     def add_cw(self, mf, phase):

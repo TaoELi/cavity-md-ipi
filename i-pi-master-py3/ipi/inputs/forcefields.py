@@ -600,6 +600,9 @@ class InputFFCavPh(InputForceField):
               "output_file": (InputValue, {"dtype": str,
                                             "default": 'output.dat',
                                             "help": "Output file for ab initio code"}),
+              "qchem_template": (InputValue, {"dtype": str,
+                                            "default": 'qchem_template',
+                                            "help": "Qchem template input file without molecule section"}),
               "memory_usage": (InputValue, {"dtype": str,
                                             "default": "2 Gb",
                                             "help": "Memory for ab initio calculations"}),
@@ -609,12 +612,20 @@ class InputFFCavPh(InputForceField):
               "nthread": (InputValue, {"dtype": int,
                                           "default": 1,
                                           "help": "Number of threads used for PSI4 calculation"}),
-              "offdig_dipder_setzero": (InputValue, {"dtype": bool,
-                                          "default": False,
-                                          "help": "Screen (or delete) off-diagonal dipole derivatives"}),
-              "n_dipder_itp": (InputValue, {"dtype": int,
+              "n_independent_bath": (InputValue, {"dtype": int,
                                           "default": 1,
-                                          "help": "Calculate dipole derivatives every n_dipder_itp time steps"})
+                                          "help": "Number of identical independent baths to accelerate ab initio calculations"}),
+              "n_qm_atom": (InputValue, {"dtype": int,
+                                          "default": -1,
+                                          "help": "Number of atoms that are needed to be calculated by QM methods (-1 means all atoms are QM)"}),
+              "mm_charge_array": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The partial charges of the MM atoms, in the format [Q1, Q2, ... ].",
+                                 "dimension": "length"}),
+              "qm_charge_array": (InputArray, {"dtype": float,
+                               "default": input_default(factory=np.zeros, args=(0,)),
+                               "help": "The partial charges of the QM atoms, in the format [Q1, Q2, ... ]. With this definition, dipole and its derivatives will not be computed",
+                               "dimension": "length"}),
     }
 
     fields.update(InputForceField.fields)
@@ -622,7 +633,7 @@ class InputFFCavPh(InputForceField):
     attribs = {}
     attribs.update(InputForceField.attribs)
 
-    default_help = """Harmonic energy calculator """
+    default_help = """CavPh energy and gradients calculator """
     default_label = "FFCavPh"
 
     def store(self, ff):
@@ -633,11 +644,14 @@ class InputFFCavPh(InputForceField):
         self.input_xyz_filename.store(ff.input_xyz_filename)
         self.grad_method.store(ff.grad_method)
         self.output_file.store(ff.output_file)
+        self.qchem_template.store(ff.qchem_template)
         self.memory_usage.store(ff.memory_usage)
         self.numpy_memory.store(ff.numpy_memory)
         self.nthread.store(ff.nthread)
-        self.offdig_dipder_setzero.store(ff.offdig_dipder_setzero)
-        self.n_dipder_itp.store(ff.n_dipder_itp)
+        self.n_independent_bath.store(ff.n_independent_bath)
+        self.n_qm_atom.store(ff.n_qm_atom)
+        self.mm_charge_array.store(ff.mm_charge_array)
+        self.qm_charge_array.store(ff.qm_charge_array)
 
     def fetch(self):
         super(InputFFCavPh, self).fetch()
@@ -645,12 +659,16 @@ class InputFFCavPh(InputForceField):
         return FFCavPh(input_xyz_filename=self.input_xyz_filename.fetch(),
         grad_method=self.grad_method.fetch(),
         output_file=self.output_file.fetch(),
+        qchem_template=self.qchem_template.fetch(),
         memory_usage=self.memory_usage.fetch(),
         numpy_memory=self.numpy_memory.fetch(),
         nthread=self.nthread.fetch(),
-        offdig_dipder_setzero=self.offdig_dipder_setzero.fetch(),
         name=self.name.fetch(),
         latency=self.latency.fetch(),
         dopbc=self.pbc.fetch(),
         threaded=self.threaded.fetch(),
-        n_dipder_itp=self.n_dipder_itp.fetch())
+        n_independent_bath=self.n_independent_bath.fetch(),
+        n_qm_atom=self.n_qm_atom.fetch(),
+        mm_charge_array=self.mm_charge_array.fetch(),
+        qm_charge_array=self.qm_charge_array.fetch()
+        )

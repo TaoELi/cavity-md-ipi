@@ -608,7 +608,21 @@ class InputFFCavPh(InputForceField):
                                             "help": "Memory for PSI4 numpy (in Gb)"}),
               "nthread": (InputValue, {"dtype": int,
                                           "default": 1,
-                                          "help": "Number of threads used for PSI4 calculation"})
+                                          "help": "Number of threads used for PSI4 calculation"}),
+              "n_independent_bath": (InputValue, {"dtype": int,
+                                          "default": 1,
+                                          "help": "Number of identical independent baths to accelerate ab initio calculations"}),
+              "n_qm_atom": (InputValue, {"dtype": int,
+                                          "default": -1,
+                                          "help": "Number of atoms that are needed to be calculated by QM methods (-1 means all atoms are QM)"}),
+              "mm_charge_array": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The partial charges of the MM atoms, in the format [Q1, Q2, ... ].",
+                                 "dimension": "length"}),
+              "qm_charge_array": (InputArray, {"dtype": float,
+                               "default": input_default(factory=np.zeros, args=(0,)),
+                               "help": "The partial charges of the QM atoms, in the format [Q1, Q2, ... ]. With this definition, dipole and its derivatives will not be computed",
+                               "dimension": "length"}),
     }
 
     fields.update(InputForceField.fields)
@@ -616,7 +630,7 @@ class InputFFCavPh(InputForceField):
     attribs = {}
     attribs.update(InputForceField.attribs)
 
-    default_help = """Harmonic energy calculator """
+    default_help = """CavPh energy and gradients calculator """
     default_label = "FFCavPh"
 
     def store(self, ff):
@@ -630,6 +644,10 @@ class InputFFCavPh(InputForceField):
         self.memory_usage.store(ff.memory_usage)
         self.numpy_memory.store(ff.numpy_memory)
         self.nthread.store(ff.nthread)
+        self.n_independent_bath.store(ff.n_independent_bath)
+        self.n_qm_atom.store(ff.n_qm_atom)
+        self.mm_charge_array.store(ff.mm_charge_array)
+        self.qm_charge_array.store(ff.qm_charge_array)
 
     def fetch(self):
         super(InputFFCavPh, self).fetch()
@@ -641,4 +659,11 @@ class InputFFCavPh(InputForceField):
         numpy_memory=self.numpy_memory.fetch(),
         nthread=self.nthread.fetch(),
         name=self.name.fetch(),
-        latency=self.latency.fetch(), dopbc=self.pbc.fetch(), threaded=self.threaded.fetch())
+        latency=self.latency.fetch(),
+        dopbc=self.pbc.fetch(),
+        threaded=self.threaded.fetch(),
+        n_independent_bath=self.n_independent_bath.fetch(),
+        n_qm_atom=self.n_qm_atom.fetch(),
+        mm_charge_array=self.mm_charge_array.fetch(),
+        qm_charge_array=self.qm_charge_array.fetch()
+        )

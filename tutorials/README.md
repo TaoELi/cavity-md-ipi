@@ -12,7 +12,9 @@
   - [Pulse excitation on molecules](#pulse-excitation-on-molecules)
   - [Pulse excitation on cavity modes](#pulse-excitation-on-cavity-modes)
   - [Adding cavity loss](#adding-cavity-loss)
-5. [Additional CavMD simulations](#additional-cavmd-simulations)
+5. [Simulating chemical reactions under VSC](single_molecule_reaction_vsc/)
+6. [Simulating large-scale QM/MM under VSC](large_scale_qmmm_reaction_vsc/)
+7. [Additional CavMD data](#additional-cavmd-data)
 
 ## Installation
 
@@ -337,7 +339,7 @@ Similarly, the following thermostat "cavloss_multilangevin" introduces two diffe
 </motion>
 ```
 
-## Additional CavMD simulations
+## Additional CavMD data
 The input and post-processing files for all publications of CavMD are stored in the following two Github projects:
 
 https://github.com/TaoELi/cavmd_examples_h2o

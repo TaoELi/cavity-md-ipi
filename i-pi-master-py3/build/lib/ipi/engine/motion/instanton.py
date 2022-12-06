@@ -49,7 +49,7 @@ class InstantonMotion(Motion):
         opt: The geometry optimization algorithm to be used
         discretization: Allows for non uniform time discretization
         alt_out: (Alternative output) Prints different formatting of outputs for geometry, hessian and bead potential energies.
-        All quantities are also accessible from typical i-pi output infrastructure. Default to 1, which prints 
+        All quantities are also accessible from typical i-pi output infrastructure. Default to 1, which prints
         every step. -1 will suppress the output (except the last one). Any other positive number will set the frequency (in steps) with
         which the quantities are written to file.
         prefix: Prefix of the output files.

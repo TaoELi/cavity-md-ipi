@@ -31,6 +31,8 @@ try:
 except:
     plumed = None
 
+import os
+
 class ForceRequest(dict):
 
     """An extension of the standard Python dict class which only has a == b
@@ -900,11 +902,17 @@ class FFCavPh(ForceField):
 
     def __init__(self, input_xyz_filename="", grad_method='', output_file='',
                 memory_usage="", numpy_memory=2, nthread=1,
-                latency=1.0, name="", pars=None, dopbc=False, threaded=False):
+                latency=1.0, name="", pars=None, dopbc=False, threaded=False,
+                n_independent_bath=1,
+                n_qm_atom=-1,
+                mm_charge_array=np.array([]),
+                qm_charge_array=np.array([])
+                ):
         """Initialises FFCavPh.
 
         Args:
            pars: Optional dictionary, giving the parameters needed by the driver.
+           n_itp_dipder: calculate dipder every n_itp_dipder step
         """
 
         # a socket to the communication library is created or linked
@@ -917,23 +925,56 @@ class FFCavPh(ForceField):
         self.apply_photon = self.photons.apply_photon
 
         # preset parameters
+        self.iter = 0
+
         self.input_xyz_filename = input_xyz_filename
         self.grad_method = grad_method
         self.output_file = output_file
         self.memory_usage = memory_usage
         self.numpy_memory = numpy_memory
         self.nthread = nthread
+        self.name = name
         print("Ab initio code will read initial config from", self.input_xyz_filename)
-        print("Theory level", self.grad_method)
-        print("Raw file during ab initio calculation is generated to", self.output_file)
-        print("Memory allocated to ab initio calculation is %s" %self.memory_usage)
-        print("Memory allocated to numpy interface is %d Gb" %self.numpy_memory)
-        print("Number of thread for ab initio calculation is %d" %self.nthread)
+        self.n_independent_bath = n_independent_bath
+        if self.n_independent_bath > 1:
+            print("### Invoking independent baths approximatin for ab initio calculations ###")
+        #print("Theory level", self.grad_method)
+        #print("Raw file during ab initio calculation is generated to", self.output_file)
+        #print("Memory allocated to ab initio calculation is %s" %self.memory_usage)
+        #print("Memory allocated to numpy interface is %d Gb" %self.numpy_memory)
+        #print("Number of thread for ab initio calculation is %d" %self.nthread)
         # end of preset parameters
 
         self.init_nuclear_str = self.initialize_from_xyz(filename=self.input_xyz_filename)
 
-        if name == "psi4":
+        # load the function of QM/MM part
+        self.n_qm_atom = n_qm_atom
+        self.mm_charge_array = mm_charge_array
+        self.qm_charge_array = qm_charge_array
+        self.do_qmmm = False
+        if self.n_qm_atom > 0 and self.n_qm_atom < self.nat_idb:
+            # check the correctness of input
+            print("nat_idb size is", self.nat_idb)
+            print("n_qm atom is", self.n_qm_atom)
+            if self.mm_charge_array.size + self.n_qm_atom == self.nat_idb:
+                print("--- Number of QM atoms plus the MM charges equals to total atoms per bath ---")
+                print("--- Will append MM molecules to total dipole moment and dipole derivatives ---")
+            else:
+                print("By default, setting MM charges as zero when interacting with cavity modes")
+                self.mm_charge_array = np.zeros(self.nat_idb - self.n_qm_atom)
+            #print(self.mm_charge_array)
+            self.do_qmmm = True
+            self.n_mm_atom = self.nat_idb - self.n_qm_atom
+            print("mm charge array size is", self.mm_charge_array.size)
+        # check the validity of QM Charge Array
+        if self.qm_charge_array.size > 0:
+            print("#! QM atoms assigned with pre-defined partial charges, will not calculate dipole or dipder explicitly")
+            print(self.qm_charge_array)
+            if self.do_qmmm and self.qm_charge_array.size != self.n_qm_atom:
+                softexit.trigger("With QM/MM calculations, wrong size of qm_charge_array")
+            if not self.do_qmmm and self.qm_charge_array.size != self.nat_idb:
+                softexit.trigger("With pure QM calculations, wrong size of qm_charge_array")
+        if self.name == "psi4":
             print("Using %s ab initio force field to do calculation" %name)
             # Initialize psi4 object
             try:
@@ -944,33 +985,54 @@ class FFCavPh(ForceField):
             numpy_memory = self.numpy_memory
             psi4.set_num_threads(self.nthread)
             psi4.core.set_output_file(self.output_file, False)
-            self.molec = psi4.geometry(self.init_nuclear_str)
+            if self.n_independent_bath == 1:
+                self.molec = psi4.geometry(self.init_nuclear_str)
+            elif self.n_independent_bath > 1:
+                print("%d atoms in the original input xyz file %s" %(self.nat, self.input_xyz_filename))
+                print("With %d independent baths, each subsystem contains the following %d atoms:" %(self.n_independent_bath, self.nat_idb))
+                self.init_nuclear_str_idb = "\n".join(self.init_nuclear_str.split("\n")[:2])
+                print(self.init_nuclear_str_idb)
+                self.molec = psi4.geometry(self.init_nuclear_str_idb)
+        elif self.name == "run_qe_driver.sh" or ("run_qc_driver" in self.name):
+            print("Will run the bash script '%s' on the local path..." %self.name)
+        elif self.name == "run_neo_qc.sh":
+            print("Running semiclassical nuclear-electronic orbital (NEO) Ehrenfest dynamics")
         else:
-            raise ValueError("%s pythonic force field is unavailable currently" %name)
+            raise ValueError("%s pythonic force field is unavailable currently" %self.name)
+
+        self.error_flag = False
 
     def initialize_from_xyz(self, filename):
         if self.apply_photon:
             thefile = open(filename, 'r')
             ntot = int(thefile.readline())
-            nat = ntot - self.photons.nphoton
-            print("Now CavPh force field will deal with %d atoms" %nat)
+            self.nat = ntot - self.photons.nphoton
+            print("Now CavPh force field will deal with %d atoms" %self.nat)
             thefile.readline()
             # Remove several lines for photonic DoFs
             str1 = ""
-            for i in range(nat):
+            for i in range(self.nat):
+                str1 += thefile.readline()
+            #print("Atomic string is")
+            #print(str1)
+            # At the same time, I need a list to save the atomic labels
+            self.atom_label_lst = str1.split()[::4]
+            #print("atomic labels are", self.atom_label_lst)
+        else:
+            thefile = open(filename, 'r')
+            self.nat = int(thefile.readline())
+            print("CavPh force field will deal with %d atoms" %self.nat)
+            thefile.readline()
+            str1 = ""
+            for i in range(self.nat):
                 str1 += thefile.readline()
             print("Atomic string is")
             print(str1)
-            return str1
-        else:
-            thefile = open(filename, 'r')
-            nat = int(thefile.readline())
-            print("CavPh force field will deal with %d atoms" %nat)
-            thefile.readline()
-            str1 = thefile.read()
-            print("Atomic string is")
-            print(str1)
-            return str1
+            # At the same time, I need a list to save the atomic labels
+            self.atom_label_lst = str1.split()[::4]
+            print("atomic labels are", self.atom_label_lst)
+        self.nat_idb = int(self.nat / self.n_independent_bath)
+        return str1
 
     def poll(self):
         """ Polls the forcefield checking if there are requests that should
@@ -987,6 +1049,11 @@ class FFCavPh(ForceField):
         """ Evaluator for FFCavPh"""
         # 1. Obtain the total (nuclear + photonic) position arrary
         q = r["pos"]
+        rvecs = r["cell"][0]
+        # assuming primitive cubic cell
+        rvecs_nparray = np.array(rvecs)
+        #self.cell_length = rvecs[0][0]
+        self.cell_length = np.array2string(rvecs_nparray)
 
         if self.apply_photon:
             # 2.1 Separate nuclear and photonic positions
@@ -994,7 +1061,17 @@ class FFCavPh(ForceField):
             self.photons.update_pos(q[-3*self.photons.nphoton:])
 
             # 2.2 For molecular part, evaluate forces and dipole derivatives
-            e, mf, dipole_x_tot, dipole_y_tot, dipder_splitted = self.calc_bare_nuclear_force_dipder(q)
+            e, mf, dipole_x_tot, dipole_y_tot, dipole_z_tot, dipder_splitted = self.calc_bare_nuclear_force_dipder(q)
+            # if anything wrong occurs in the evaluation, self.error_flag will become true
+            # so we try to re-evaluate the forces
+            count_retry = 0
+            while self.error_flag == True:
+                print("Error detected in getting gradients, try to rerun SCF...")
+                e, mf, dipole_x_tot, dipole_y_tot, dipole_z_tot, dipder_splitted = self.calc_bare_nuclear_force_dipder(q)
+                count_retry += 1
+                if (count_retry >= 5):
+                    softexit.trigger("Error always detected in obtaining gradients, try to shutdown simulation...")
+            print("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, dipole_z_tot))
 
             # 2.3 Evaluate photonic energy (the same as FFCavPhSocket)
             e_photon = self.photons.obtain_potential()
@@ -1019,19 +1096,33 @@ class FFCavPh(ForceField):
             # 2.5. Calculate photonic force
             f_photon = self.photons.calc_photon_force(dipole_x_tot, dipole_y_tot)
 
+            # 2.5.1 Update if adding external electric fields on the photonic DoFs
+            self.photons.add_pulse(f_photon)
+            self.photons.add_cw(f_photon, phase=None)
+
             # 2.6. Merge the two forces
             mf = np.concatenate((mf[:], f_photon[:]))
         else:
             # 2. Performing conventional energy and force evaluation
             e, mf = self.calc_bare_nuclear_force(q)
+            # if anything wrong occurs in the evaluation, self.error_flag will become true
+            # so we try to re-evaluate the forces
+            count_retry = 0
+            while self.error_flag == True:
+                print("Error detected in getting gradients, try to rerun SCF...")
+                e, mf = self.calc_bare_nuclear_force(q)
+                count_retry += 1
+                if (count_retry >= 5):
+                    softexit.trigger("Error always detected in obtaining gradients, try to shutdown simulation...")
 
         # 3. Finally, update energy and forces
+        self.iter += 1
         r["result"] = [e, mf, np.zeros((3, 3), float), ""]
         r["status"] = "Done"
         r["t_finished"] = time.time()
 
     def calc_bare_nuclear_force(self, q):
-        if self.name == "psi4":
+        if self.name == "psi4" and self.n_independent_bath == 1:
             import psi4
             psi4.set_num_threads(self.nthread)
             # update positions for molecules
@@ -1040,20 +1131,152 @@ class FFCavPh(ForceField):
             g, wfn2 = psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec, return_wfn=True)
             force = -np.asarray(g)
             return E, force.flatten()
+        elif self.name == "psi4" and self.n_independent_bath > 1:
+            import psi4
+            psi4.set_num_threads(self.nthread)
+            # update positions for molecules with independent baths approximation
+            E_tot = 0.0
+            force_lst = []
+            #print("- Total atomic coordinate is\n", q)
+            for idx_idb in range(self.n_independent_bath):
+                q_sub = q[int(idx_idb * self.nat_idb * 3):int((idx_idb+1) * self.nat_idb * 3)]
+                #print("--- local q coordinate is\n", q_sub)
+                self.molec.set_geometry(psi4.core.Matrix.from_array(q_sub.reshape((-1, 3))))
+                E, wfn = psi4.energy(self.grad_method, return_wfn=True, molecule=self.molec)
+                force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
+
+                E_tot += E
+                force_lst.append(force)
+                #print(" --- evaluating No.%d independent bath" %self.n_independent_bath)
+                #print(" --- energy is %.7f" %E)
+                #print(" --- force is\n", force)
+
+            force = np.array(force_lst).flatten()
+            #print("- Final combined energy is %.7f" %E_tot)
+            #print("- Final combined force is\n", force)
+            return E_tot, force
+        elif self.name == "run_qe_driver.sh" and self.n_independent_bath == 1:
+            # 1. we construct a string "ATOM1 x y z\n ATOM2 x y z\n ..."
+            total_str = ""
+            for idx in range(len(self.atom_label_lst)):
+                local_str = "%s %.6f %.6f %.6f\n" %(self.atom_label_lst[idx], q[idx*3], q[idx*3+1], q[idx*3+2])
+                total_str += local_str
+            #print("Use %s to evaluate the following molecular geometry:" %self.name)
+            #print(total_str)
+            bashCommand = "./" + self.name + ", %s" %total_str + ", %s" %self.cell_length + " ,phonon_no"
+            import subprocess
+            process = subprocess.Popen(bashCommand.split(","), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            # read data from local file
+            E = np.loadtxt("IPI_DRIVER_TEMP/energy.ry") * 0.5
+            force = np.loadtxt("IPI_DRIVER_TEMP/force.ry_au") * 0.5
+            force  = force.flatten()
+            return E, force
+        elif ("run_qc_driver" in self.name) and self.n_independent_bath >= 1:
+            import subprocess
+            processes = []
+            for idx_idb in range(self.n_independent_bath):
+                IPI_DRIVER_TEMP = "IPI_DRIVER_TEMP_%d" %(idx_idb+1)
+                # 1. we construct a string "ATOM1 x y z\n ATOM2 x y z\n ..."
+                total_str = ""
+                idx_start = idx_idb * self.nat_idb
+                for idx in range(self.nat_idb):
+                    local_str = "%s %.8f %.8f %.8f\n" %(self.atom_label_lst[idx+idx_start], q[(idx+idx_start)*3], q[(idx+idx_start)*3+1], q[(idx+idx_start)*3+2])
+                    total_str += local_str
+                #print("Use %s to evaluate the following molecular geometry:" %self.name)
+                #print(total_str)
+
+                bashCommand = "./" + self.name + ",%s" %total_str + ",%s" %self.cell_length + ",dipder_no" + ",%s" %IPI_DRIVER_TEMP
+                if self.do_qmmm:
+                    bashCommand += ",qmmm_yes"
+                #print("final bash command is")
+                #print(bashCommand)
+                #print("splitted command is")
+                #print(bashCommand.split(","))
+                process = subprocess.Popen(bashCommand.split(","), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                processes.append(process)
+                #print("processes are", processes)
+                try:
+                    os.remove("%s/energy.au" %IPI_DRIVER_TEMP)
+                    os.remove("%s/egrad.au" %IPI_DRIVER_TEMP)
+                except:
+                    None
+
+            # run command
+            #output = [p.wait() for p in processes]
+            output = [p.communicate() for p in processes]
+            #print("output is", output)
+
+            E_tot = 0.0
+            force_lst = []
+            mux_tot, muy_tot, muz_tot = 0.0, 0.0, 0.0
+            for idx_idb in range(self.n_independent_bath):
+                IPI_DRIVER_TEMP = "IPI_DRIVER_TEMP_%d" %(idx_idb+1)
+                # read data from local file
+                try:
+                    E = np.loadtxt("%s/energy.au" %IPI_DRIVER_TEMP)
+                    force = np.loadtxt("%s/egrad.au" %IPI_DRIVER_TEMP)
+                    mu_info = np.loadtxt("%s/dipole.debye" %IPI_DRIVER_TEMP)
+                except:
+                    print("Error occurs when reading files from %s" %IPI_DRIVER_TEMP)
+                    self.error_flag = True
+                    return 0, 0
+                # check if there is anything wrong for this simulation
+                try:
+                    if force.size == self.nat_idb*3 and E.size == 1 and mu_info.size == 3:
+                        self.error_flag = False
+                    else:
+                        self.error_flag = True
+                        return 0, 0
+                except:
+                    print("Error occurs when evaluating the dimensions of the files")
+                    return 0, 0
+                    self.error_flag = True
+                #print("coordinate is ")
+                #print(q)
+                if not self.do_qmmm:
+                    force  = -1.0 * np.transpose(force).flatten()
+                else:
+                    force  = -1.0 * force.flatten()
+                #print("- Energy is %.10f" %E)
+                #print("- Force is")
+                #print(force)
+                mux, muy, muz = mu_info
+                mux *= self.Debye2AU
+                muy *= self.Debye2AU
+                muz *= self.Debye2AU
+
+                E_tot += E
+                force_lst.append(force)
+                mux_tot += mux
+                muy_tot += muy
+                muz_tot += muz
+
+            force = np.array(force_lst).flatten()
+            print("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(mux_tot, muy_tot, muz_tot))
+            self.error_flag == False
+            return E_tot, force
 
     def calc_bare_nuclear_force_dipder(self, q):
-        if self.name == "psi4":
+        if self.name == "psi4" and self.n_independent_bath == 1:
             import psi4
             psi4.set_num_threads(self.nthread)
             # update positions for molecules
             self.molec.set_geometry(psi4.core.Matrix.from_array(q.reshape((-1, 3))))
             E, wfn = psi4.energy(self.grad_method, return_wfn=True, molecule=self.molec)
             # evaluate total dipole moment
-            mux = psi4.core.variable('SCF DIPOLE X') * self.Debye2AU
-            muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
+            try:
+                # depending on the version of psi4
+                mux, muy, muz = psi4.core.variable('SCF DIPOLE')
+            except:
+                mux = psi4.core.variable('SCF DIPOLE X') * self.Debye2AU
+                muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
+                muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
             force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
+
             H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
             dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
+
             # importantly, I need to split diper array to the desired ones
             dmuxdx = dipder[0::3,0]
             dmuydx = dipder[0::3,1]
@@ -1081,4 +1304,244 @@ class FFCavPh(ForceField):
             #print("dmuydz")
             #print(dmuydz)
 
-            return E, force.flatten(), mux, muy, dipder_splitted
+            return E, force.flatten(), mux, muy, muz, dipder_splitted
+        elif self.name == "psi4" and self.n_independent_bath > 1:
+            import psi4
+            psi4.set_num_threads(self.nthread)
+            # update positions for molecules with independent baths approximation
+            E_tot = 0.0
+            force_lst = []
+            mux_tot, muy_tot, muz_tot = 0.0, 0.0, 0.0
+            dipder_lst = []
+            #print("- Total atomic coordinate is\n", q)
+            for idx_idb in range(self.n_independent_bath):
+                q_sub = q[int(idx_idb * self.nat_idb * 3):int((idx_idb+1) * self.nat_idb * 3)]
+                #print("--- local q coordinate is\n", q_sub)
+                self.molec.set_geometry(psi4.core.Matrix.from_array(q_sub.reshape((-1, 3))))
+                E, wfn = psi4.energy(self.grad_method, return_wfn=True, molecule=self.molec)
+                # evaluate total dipole moment
+                try:
+                    # depending on the version of psi4
+                    mux, muy, muz = psi4.core.variable('SCF DIPOLE')
+                except:
+                    mux = psi4.core.variable('SCF DIPOLE X') * self.Debye2AU
+                    muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
+                    muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
+                force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
+
+                H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
+                dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
+
+                E_tot += E
+                mux_tot += mux
+                muy_tot += muy
+                muz_tot += muz
+                force_lst.append(force)
+                dipder_lst.append(dipder)
+                #print(" --- evaluating No.%d independent bath" %self.n_independent_bath)
+                #print(" --- energy is %.7f" %E)
+                #print(" --- force is\n", force)
+                #print(" --- dipder is\n", dipder)
+
+            force = np.array(force_lst).flatten()
+            dipder = np.array(dipder_lst).reshape(-1, 3)
+            #print("- Final combined energy is %.7f" %E_tot)
+            #print("- Final combined force is\n", force)
+            #print("- Final combined dipder is\n", dipder)
+            # importantly, I need to split diper array to the desired ones
+            dmuxdx = dipder[0::3,0]
+            dmuydx = dipder[0::3,1]
+            dmuxdy = dipder[1::3,0]
+            dmuydy = dipder[1::3,1]
+            dmuxdz = dipder[2::3,0]
+            dmuydz = dipder[2::3,1]
+            dipder_splitted = (dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz)
+
+            return E_tot, force, mux_tot, muy_tot, muz_tot, dipder_splitted
+        elif self.name == "run_qe_driver.sh" and self.n_independent_bath == 1:
+            # 1. we construct a string "ATOM1 x y z\n ATOM2 x y z\n ..."
+            total_str = ""
+            for idx in range(len(self.atom_label_lst)):
+                local_str = "%s %.6f %.6f %.6f\n" %(self.atom_label_lst[idx], q[idx*3], q[idx*3+1], q[idx*3+2])
+                total_str += local_str
+            #print("Use %s to evaluate the following molecular geometry:" %self.name)
+            #print(total_str)
+            bashCommand = "./" + self.name + ", %s" %total_str + ", %s" %self.cell_length + " ,phonon_yes"
+            import subprocess
+            process = subprocess.Popen(bashCommand.split(","), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            # read data from local file
+            E = np.loadtxt("IPI_DRIVER_TEMP/energy.ry") * 0.5
+            force = np.loadtxt("IPI_DRIVER_TEMP/force.ry_au") * 0.5
+            force  = force.flatten()
+
+            mux, muy, muz = np.loadtxt("IPI_DRIVER_TEMP/dipole.au")
+            Qx = np.loadtxt("IPI_DRIVER_TEMP/Qx")
+            Qy = np.loadtxt("IPI_DRIVER_TEMP/Qy")
+            Qz = np.loadtxt("IPI_DRIVER_TEMP/Qz")
+            dmuxdx = Qx[:,0]
+            dmuydx = Qy[:,0]
+            dmuxdy = Qx[:,1]
+            dmuydy = Qy[:,1]
+            dmuxdz = Qx[:,2]
+            dmuydz = Qy[:,2]
+            dipder_splitted = (dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz)
+            return E, force, mux, muy, muz, dipder_splitted
+        elif ("run_qc_driver" in self.name) and self.n_independent_bath >= 1:
+            import subprocess
+            processes = []
+            for idx_idb in range(self.n_independent_bath):
+                IPI_DRIVER_TEMP = "IPI_DRIVER_TEMP_%d" %(idx_idb+1)
+                # 1. we construct a string "ATOM1 x y z\n ATOM2 x y z\n ..."
+                total_str = ""
+                idx_start = idx_idb * self.nat_idb
+                for idx in range(self.nat_idb):
+                    local_str = "%s %.8f %.8f %.8f\n" %(self.atom_label_lst[idx+idx_start], q[(idx+idx_start)*3], q[(idx+idx_start)*3+1], q[(idx+idx_start)*3+2])
+                    total_str += local_str
+                #print("Use %s to evaluate the following molecular geometry:" %self.name)
+                #print(total_str)
+                bashCommand = "./" + self.name + ", %s" %total_str + ", %s" %self.cell_length + " ,dipder_yes" + ",%s" %IPI_DRIVER_TEMP
+                # If qm_charge_array has a size larger than zero, we do not perform expensive simulations
+                if self.qm_charge_array.size > 0:
+                    #print("qm_charge_array defined, skipping expensive dipder calculation")
+                    bashCommand = "./" + self.name + ", %s" %total_str + ", %s" %self.cell_length + " ,dipder_no" + ",%s" %IPI_DRIVER_TEMP
+                if self.do_qmmm:
+                    bashCommand += ",qmmm_yes"
+                process = subprocess.Popen(bashCommand.split(","), stdout=subprocess.PIPE)
+                processes.append(process)
+                # Finally, try to remove the previous potential files
+                try:
+                    os.remove("%s/energy.au" %IPI_DRIVER_TEMP)
+                    os.remove("%s/egrad.au" %IPI_DRIVER_TEMP)
+                    os.remove("%s/dipole.debye" %IPI_DRIVER_TEMP)
+                    os.remove("%s/dipder.au" %IPI_DRIVER_TEMP)
+                except:
+                    None
+
+            # run command
+            output = [p.communicate() for p in processes]
+
+            E_tot = 0.0
+            force_lst = []
+            mux_tot, muy_tot, muz_tot = 0.0, 0.0, 0.0
+            dipder_lst = []
+            for idx_idb in range(self.n_independent_bath):
+                IPI_DRIVER_TEMP = "IPI_DRIVER_TEMP_%d" %(idx_idb+1)
+                # read data from local file
+                try:
+                    E = np.loadtxt("%s/energy.au" %IPI_DRIVER_TEMP)
+                    force = np.loadtxt("%s/egrad.au" %IPI_DRIVER_TEMP)
+                    if self.qm_charge_array.size == 0:
+                        #print("qm_charge_array not defined, reading dipder from file")
+                        mu_info = np.loadtxt("%s/dipole.debye" %IPI_DRIVER_TEMP)
+                        dipder = np.loadtxt("%s/dipder.au" %IPI_DRIVER_TEMP)
+                    else:
+                        #print("qm_charge_array defined, calculating dipder automatically")
+                        idx_start = idx_idb * self.nat_idb
+                        if self.do_qmmm:
+                            q_sub = q[(idx_start)*3 : (idx_start + self.nat_idb)*3]
+                            q_qm = q_sub[:self.n_qm_atom*3]
+                        else:
+                            q_qm = q[idx_start*3:(idx_start + self.nat_idb)*3]
+                        mux = np.sum(self.qm_charge_array * q_qm[0::3])
+                        muy = np.sum(self.qm_charge_array * q_qm[1::3])
+                        muz = np.sum(self.qm_charge_array * q_qm[2::3])
+                        mu_info = np.array([mux, muy, muz]) / self.Debye2AU
+
+                        n_dipder = self.nat_idb*9
+                        if self.do_qmmm:
+                            n_dipder = self.n_qm_atom * 9
+                        dipder = np.zeros(n_dipder).reshape(-1, 3)
+                        dipder[0::3,0] = self.qm_charge_array
+                        dipder[1::3,1] = self.qm_charge_array
+                        dipder[2::3,2] = self.qm_charge_array
+                        #print("self-calculated dipole vector is", mu_info)
+                        #print("self-calculated dipder info is", dipder)
+                except:
+                    print("Error occurs when reading files from %s" %IPI_DRIVER_TEMP)
+                    self.error_flag = True
+                    return 0, 0, 0, 0, 0, 0
+                # check if there is anything wrong for this simulation
+                n_dipder = self.nat_idb*9
+                if self.do_qmmm:
+                    n_dipder = self.n_qm_atom * 9
+                try:
+                    if force.size == self.nat_idb*3 and E.size == 1 and dipder.size == n_dipder and mu_info.size == 3:
+                        self.error_flag = False
+                    else:
+                        self.error_flag = True
+                        return 0, 0, 0, 0, 0, 0
+                except:
+                    print("Error occurs when evaluating the dimensions of the files")
+                    return 0, 0, 0, 0, 0, 0
+                    self.error_flag = True
+                #print("coordinate is ")
+                #print(q)
+                #print("- Before treatment force is")
+                #print(force)
+                if not self.do_qmmm:
+                    force  = -1.0 * np.transpose(force).flatten()
+                else:
+                    force  = -1.0 * force.flatten()
+                #print("- Energy is %.10f" %E)
+                #print("- Force is")
+                #print(force)
+                mux, muy, muz = mu_info
+                mux *= self.Debye2AU
+                muy *= self.Debye2AU
+                muz *= self.Debye2AU
+                #print("dipder is")
+                #print(dipder)
+
+                if self.do_qmmm:
+                    #print("Appending MM partial charges to molecular dipole moment")
+                    idx_start = idx_idb * self.nat_idb
+                    q_sub = q[(idx_start)*3 : (idx_start + self.nat_idb)*3]
+                    #print("molecular coordinate is: ", q_sub)
+                    q_sub_mm = q_sub[self.n_qm_atom*3:]
+                    #print("MM molecules are:", q_sub_mm)
+                    mux_mm = np.sum(q_sub_mm[0::3] * self.mm_charge_array)
+                    muy_mm = np.sum(q_sub_mm[1::3] * self.mm_charge_array)
+                    muz_mm = np.sum(q_sub_mm[2::3] * self.mm_charge_array)
+                    #print("QMsub mux = %.3f, muy = %.3f, muz = %.3f" %(mux, muy, muz))
+                    #print("MMsub mux = %.3f, muy = %.3f, muz = %.3f" %(mux_mm, muy_mm, muz_mm))
+                    mux += mux_mm
+                    muy += muy_mm
+                    muz += muz_mm
+                    #print("QM+MM mux = %.3f, muy = %.3f, muz = %.3f" %(mux, muy, muz))
+                    #print("Appending MM partial charges to molecular dipole derivatives")
+                    #print("QMsub dipder = ")
+                    #print(dipder)
+                    #print("MMsub dipder = ")
+                    dipder_mm = np.zeros((self.n_mm_atom*3, 3))
+                    dipder_mm[0::3,0] = self.mm_charge_array # dmux/dx
+                    dipder_mm[1::3,1] = self.mm_charge_array # dmuy/dy
+                    dipder_mm[2::3,2] = self.mm_charge_array # dmuz/dz
+                    #print(dipder_mm)
+                    #print("QM+MM dipder = ")
+                    dipder = np.concatenate((dipder, dipder_mm))
+                    #print(dipder)
+                    #print("QM+MM forces = ")
+                    #print(force)
+
+                E_tot += E
+                mux_tot += mux
+                muy_tot += muy
+                muz_tot += muz
+                force_lst.append(force)
+                dipder_lst.append(dipder)
+
+            force = np.array(force_lst).flatten()
+            dipder = np.array(dipder_lst).reshape(-1, 3)
+            #print("The final dipder is")
+            #print(dipder)
+            # importantly, I need to split diper array to the desired ones
+            dmuxdx = dipder[0::3,0]
+            dmuydx = dipder[0::3,1]
+            dmuxdy = dipder[1::3,0]
+            dmuydy = dipder[1::3,1]
+            dmuxdz = dipder[2::3,0]
+            dmuydz = dipder[2::3,1]
+            dipder_splitted = (dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz)
+            self.error_flag = False
+            return E_tot, force, mux_tot, muy_tot, muz_tot, dipder_splitted
