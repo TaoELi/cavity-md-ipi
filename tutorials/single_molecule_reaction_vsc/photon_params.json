@@ -1,0 +1,6 @@
+{
+  "apply_photon" : true,
+  "eff_mass" : 1.0,
+  "freqs_cm" : 1000.0,
+  "E0" : 6e-3
+}

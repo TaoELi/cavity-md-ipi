@@ -1,0 +1,42 @@
+<simulation verbosity='high'>
+  <output prefix='simu_incav'>
+    <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}] </properties>
+    <trajectory filename='xc' stride='1' format='xyz'> x_centroid{angstrom} </trajectory>
+    <checkpoint filename='checkpoint' stride='1' overwrite='True'/>
+  </output>
+  <total_steps>200</total_steps>
+  <prng>
+    <seed>846295</seed>
+  </prng>
+  <ffcavph name='psi4'>
+      <input_xyz_filename> ts_opt_incav_6e-3.xyz </input_xyz_filename>
+      <grad_method> hf/6-31g* </grad_method>
+      <output_file> OUT_1.dat </output_file>
+      <memory_usage> 4 gb </memory_usage>
+      <numpy_memory> 2 </numpy_memory>
+      <nthread> 1 </nthread>
+  </ffcavph>
+  <system>
+    <initialize nbeads='1'>
+      <file mode='xyz' units='angstrom'> ts_opt_incav_6e-3.xyz </file>
+      <cell mode='manual' units='angstrom'>
+	[242.92, 0, 0, 0, 242.92, 0, 0, 0, 242.92]
+      </cell>
+      <velocities mode='thermal' units='kelvin'> 300 </velocities>
+    </initialize>
+    <forces>
+      <force forcefield='psi4'> </force>
+    </forces>
+    <motion mode='dynamics'>
+      <dynamics mode='nvt'>
+        <timestep units='femtosecond'> 0.5 </timestep>
+        <thermostat mode='langevin'>
+          <tau units='femtosecond'> 100 </tau>
+        </thermostat>
+      </dynamics>
+    </motion>
+    <ensemble>
+      <temperature units='kelvin'> 300 </temperature>
+    </ensemble>
+  </system>
+</simulation>
