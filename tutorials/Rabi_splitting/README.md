@@ -264,7 +264,7 @@ Here, the Gaussian pulse takes the form:
 
 <center> <img src="https://render.githubusercontent.com/render/math?math=E(t) = A \exp\left [-2\ln(2)\frac{(t - t_0)^2}{\tau^2}\right ]\sin(\omega t %2B \phi)."> </center>
 
-The above parameters are <img src="https://render.githubusercontent.com/render/math?math=A">=1.0 a.u., <img src="https://render.githubusercontent.com/render/math?math=\tau"> = 10.0 fs, <img src="https://render.githubusercontent.com/render/math?math=\omega">=3550.0 cm<sup>-1</sup>, <img src="https://render.githubusercontent.com/render/math?math=\phi">=3.14, <img src="https://render.githubusercontent.com/render/math?math=t_0"> = 20.0 fs. The Gaussian pulse will be turned on at <img src="https://render.githubusercontent.com/render/math?math=t_0"> and will be turned off at <img src="https://render.githubusercontent.com/render/math?math=t_0\%2B 4\tau">.
+The above parameters are <img src="https://render.githubusercontent.com/render/math?math=A">=1.0 a.u., <img src="https://render.githubusercontent.com/render/math?math=\tau"> = 10.0 fs, <img src="https://render.githubusercontent.com/render/math?math=\omega">=3550.0 cm<sup>-1</sup>, <img src="https://render.githubusercontent.com/render/math?math=\phi">=3.14, <img src="https://render.githubusercontent.com/render/math?math=t_0"> = 20.0 fs. The Gaussian pulse will be turned on at <img src="https://render.githubusercontent.com/render/math?math=t_0"> and will be turned off at <img src="https://render.githubusercontent.com/render/math?math=t_0\%2B 2\tau">.
 
 ### Pulse excitation on cavity modes
 

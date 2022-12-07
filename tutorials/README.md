@@ -12,7 +12,7 @@ See [single_molecule_reaction_vsc/](single_molecule_reaction_vsc/). This tutoria
 
 ### Large-scale CavMD QM/MM simulations under collective vibrational strong coupling
 
-See [large_scale_qmmm_reaction_vsc/](large_scale_qmmm_reaction_vsc/). This tutorial runs large-scale QM/MM CavMD and can be done on a Linux cluster.
+See [large_scale_qmmm_reaction_vsc/](large_scale_qmmm_reaction_vsc/). This tutorial runs large-scale QM/MM CavMD and can be done on a Linux cluster. **However, because currently the QM/MM feature is not fully optimized, please send me an email (taoli@sas.upenn.edu) if you need this tutorial!**
 
 **Before checking the tutorials, please install i-pi as follows.**
 

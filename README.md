@@ -14,7 +14,7 @@ This approach is still under development and more features will be reported and 
 
 - Propagating **nonreactive, quantum** molecular dynamics under VSC via path integrals.
 
-- Propagating **first-principles reactive** molecular dynamics under VSC spanning from (i) a single molecule in the gas phase to (ii) a large collection of molecules in the solvent environment.
+- Propagating **first-principles reactive** molecular dynamics under VSC spanning from (i) a single molecule in the gas phase to (ii) a large collection of molecules in the solvent environment (beta version).
 
 ## System Requirement
 

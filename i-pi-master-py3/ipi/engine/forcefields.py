@@ -1452,10 +1452,14 @@ class FFCavPh(ForceField):
                 processes.append(process)
                 # Finally, try to remove the previous potential files
                 try:
-                    os.remove("%s/energy.au" %IPI_DRIVER_TEMP)
-                    os.remove("%s/egrad.au" %IPI_DRIVER_TEMP)
-                    os.remove("%s/dipole.debye" %IPI_DRIVER_TEMP)
-                    os.remove("%s/dipder.au" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/energy.au" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/egrad.au" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/dipole.debye" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/dipder.au" %IPI_DRIVER_TEMP)
+                    os.rename("%s/energy.au" %IPI_DRIVER_TEMP, "%s/energy.au.last_step" %IPI_DRIVER_TEMP)
+                    os.rename("%s/egrad.au" %IPI_DRIVER_TEMP, "%s/egrad.au.last_step" %IPI_DRIVER_TEMP)
+                    os.rename("%s/dipole.debye" %IPI_DRIVER_TEMP, "%s/dipole.debye.last_step" %IPI_DRIVER_TEMP)
+                    os.rename("%s/dipder.au" %IPI_DRIVER_TEMP, "%s/dipder.au.last_step" %IPI_DRIVER_TEMP)
                 except:
                     None
 
