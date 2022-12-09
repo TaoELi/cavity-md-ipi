@@ -36,7 +36,7 @@ Installing Anaconda or Miniconda (https://docs.conda.io/en/latest/miniconda.html
 
 ## How to use CavMD?
 
-Please check folder [**"tutorials/"**](tutorials/) for step-by-step introductions.
+Please check folder [**"tutorials/"**](tutorials/) for step-by-step introductions. Please also feel free to send me an email (see [here](https://taoeli.github.io/)) if you are confused about any functionality of CavMD or want to use this code for a feature not mentioned in the tutorials.
 
 Please also check the following Github repositories which store the input and post-processing files for reproducing all figures in the publications of CavMD.
 
