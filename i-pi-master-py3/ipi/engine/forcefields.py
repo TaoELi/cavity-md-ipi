@@ -988,13 +988,14 @@ class FFCavPh(ForceField):
             psi4.set_num_threads(self.nthread)
             psi4.core.set_output_file(self.output_file, False)
             if self.n_independent_bath == 1:
-                self.molec = psi4.geometry(self.init_nuclear_str)
+                print(self.init_nuclear_str)
+                self.molec = psi4.geometry(self.init_nuclear_str + "\n symmetry c1\n noreorient \n nocom")
             elif self.n_independent_bath > 1:
                 print("%d atoms in the original input xyz file %s" %(self.nat, self.input_xyz_filename))
                 print("With %d independent baths, each subsystem contains the following %d atoms:" %(self.n_independent_bath, self.nat_idb))
-                self.init_nuclear_str_idb = "\n".join(self.init_nuclear_str.split("\n")[:2])
+                self.init_nuclear_str_idb = "\n".join(self.init_nuclear_str.split("\n")[:self.nat_idb])
                 print(self.init_nuclear_str_idb)
-                self.molec = psi4.geometry(self.init_nuclear_str_idb)
+                self.molec = psi4.geometry(self.init_nuclear_str_idb + "\n symmetry c1\n noreorient \n nocom")
         elif self.name == "run_qe_driver.sh" or ("run_qc_driver" in self.name):
             print("Will run the bash script '%s' on the local path..." %self.name)
         elif self.name == "qchem-neo":
@@ -1314,17 +1315,23 @@ class FFCavPh(ForceField):
                 muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
                 muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
             force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
-
-            H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
-            dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
-
-            # importantly, I need to split diper array to the desired ones
-            dmuxdx = dipder[0::3,0]
-            dmuydx = dipder[0::3,1]
-            dmuxdy = dipder[1::3,0]
-            dmuydy = dipder[1::3,1]
-            dmuxdz = dipder[2::3,0]
-            dmuydz = dipder[2::3,1]
+            if self.qm_charge_array.size > 0:
+                dmuxdx = self.qm_charge_array
+                dmuydx = np.zeros(self.qm_charge_array.size)
+                dmuxdy = np.zeros(self.qm_charge_array.size)
+                dmuydy = self.qm_charge_array
+                dmuxdz = np.zeros(self.qm_charge_array.size)
+                dmuydz = np.zeros(self.qm_charge_array.size)
+            else:
+                H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
+                dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
+                # importantly, I need to split diper array to the desired ones
+                dmuxdx = dipder[0::3,0]
+                dmuydx = dipder[0::3,1]
+                dmuxdy = dipder[1::3,0]
+                dmuydy = dipder[1::3,1]
+                dmuxdz = dipder[2::3,0]
+                dmuydz = dipder[2::3,1]
             dipder_splitted = (dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz)
 
             # check the validity of the output values [be very careful]
@@ -1370,9 +1377,15 @@ class FFCavPh(ForceField):
                     muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
                 force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
 
-                H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
-                dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
-
+                if self.qm_charge_array.size > 0:
+                    nsize = int(self.qm_charge_array.size * 3)
+                    dipder = np.zeros((nsize, 3))
+                    dipder[0::3,0] = self.qm_charge_array
+                    dipder[1::3,1] = self.qm_charge_array
+                    dipder[2::3,2] = self.qm_charge_array
+                else:
+                    H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
+                    dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
                 E_tot += E
                 mux_tot += mux
                 muy_tot += muy

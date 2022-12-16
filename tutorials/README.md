@@ -1,14 +1,19 @@
 ## Tutorials
 
-Three tutorials are available for exploring different features of CavMD:
+Four tutorials are available for exploring different features of CavMD:
 
-### Polariton spectrum under collective vibrational strong coupling
+### Polariton spectrum under collective vibrational strong coupling with force fields
 
 See [Rabi_splitting/](Rabi_splitting/). This tutorial uses force-field CavMD to simulation the polariton spectrum of liquid water and can be easily done with a personal laptop.
 
-### Chemical reaction for a single molecule under vibrational strong coupling
+### Chemical reaction for a single molecule under vibrational strong coupling with electronic structure theory
 
 See [single_molecule_reaction_vsc/](single_molecule_reaction_vsc/). This tutorial runs first-principles CavMD and can be easily done with a personal laptop.
+
+### How to efficiently simulate collective vibrational strong coupling with electronic structure theory? The independent bath approximation
+
+See [independent_bath_approx/](independent_bath_approx/). This tutorial runs first-principles CavMD with independent bath approximation and can be easily done with a personal laptop.
+
 
 ### Large-scale CavMD QM/MM simulations under collective vibrational strong coupling
 

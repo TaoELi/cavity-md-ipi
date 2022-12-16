@@ -4,7 +4,7 @@
 
 ## What is CavMD?
 
-CavMD is an approach to simulate **coupled photon-nuclear dynamics for realistic molecules** in optical or plasmonic cavities under **vibrational strong coupling (VSC)**. By propagating the classical motion of nuclei and cavity photons on an electronic ground-state surface, we can use CavMD to explore possible cavity modifications of molecular properties. This approach is a natural extension of the coupled oscillator model, i.e., both a caivty photon and a molecular bright mode are described by harmonic oscillators. It aims to accurately describe **VSC or vibrational ultrastrong (V-USC) coupling**, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum. Nuclear and photonic quantum effects can be further included in CavMD by path-integral treatments such as thermostatted ring polymer molecular dynamics (TRPMD).
+CavMD is an approach to simulate **coupled photon-nuclear dynamics for realistic molecules** in optical or plasmonic cavities under **vibrational strong coupling (VSC)**. By propagating the classical motion of nuclei and cavity photons on an electronic ground-state surface, we can use CavMD to explore possible cavity modifications of molecular properties. This approach is a natural extension of the coupled oscillator model, i.e., both a cavity photon and a molecular bright mode are described by harmonic oscillators. It aims to accurately describe **VSC or vibrational ultrastrong (V-USC) coupling**, i.e., when a few cavity modes are resonantly coupled to a few vibrational normal modes of molecules and a collective Rabi splitting is formed in the molecular infrared (IR) spectrum. Nuclear and photonic quantum effects can be further included in CavMD by path-integral treatments such as thermostatted ring polymer molecular dynamics (TRPMD).
 
 This approach is still under development and more features will be reported and updated in the near future.
 
@@ -36,7 +36,15 @@ Installing Anaconda or Miniconda (https://docs.conda.io/en/latest/miniconda.html
 
 ## How to use CavMD?
 
-Please check folder [**"tutorials/"**](tutorials/) for step-by-step introductions. Please also feel free to send me an email (see [here](https://taoeli.github.io/)) if you are confused about any functionality of CavMD or want to use this code for a feature not mentioned in the tutorials.
+Please check folder [**"tutorials/"**](tutorials/) for step-by-step introductions on running
+
+1. [Force-field CavMD for collective VSC in the condensed phase](tutorials/Rabi_splitting/);
+
+2. [First-principles CavMD for chemical reactions under single-molecule VSC](tutorials/single_molecule_reaction_vsc/);
+
+3. [First-principles CavMD for many molecules under VSC](tutorials/independent_bath_approx/);
+
+Please also feel free to send me an email (see [here](https://taoeli.github.io/)) if you are confused about any functionality of CavMD or want to use this code for a feature not mentioned in the tutorials.
 
 Please also check the following Github repositories which store the input and post-processing files for reproducing all figures in the publications of CavMD.
 

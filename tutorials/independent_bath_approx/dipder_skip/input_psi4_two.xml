@@ -1,0 +1,41 @@
+<simulation verbosity='high'>
+  <output prefix='simu_two'>
+    <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}] </properties>
+    <trajectory filename='xc' stride='1' format='xyz'> x_centroid{angstrom} </trajectory>
+    <checkpoint filename='checkpoint' stride='1' overwrite='True'/>
+  </output>
+  <total_steps>500</total_steps>
+  <prng>
+    <seed>846295</seed>
+  </prng>
+  <ffcavph name='psi4'>
+      <input_xyz_filename> cos_two.xyz </input_xyz_filename>
+      <grad_method> hf/6-31g </grad_method>
+      <output_file> OUT_2.dat </output_file>
+      <memory_usage> 4 gb </memory_usage>
+      <numpy_memory> 2 </numpy_memory>
+      <nthread> 1 </nthread>
+      <n_independent_bath> 2 </n_independent_bath>
+      <qm_charge_array> [0.6512, -0.3256, -0.3256] </qm_charge_array>
+  </ffcavph>
+  <system>
+    <initialize nbeads='1'>
+      <file mode='xyz' units='angstrom'> cos_two.xyz </file>
+      <cell mode='manual' units='angstrom'>
+	[242.92, 0, 0, 0, 242.92, 0, 0, 0, 242.92]
+      </cell>
+      <velocities mode='thermal' units='kelvin'> 1e-9 </velocities>
+    </initialize>
+    <forces>
+      <force forcefield='psi4'> </force>
+    </forces>
+    <motion mode='dynamics'>
+      <dynamics mode='nve'>
+        <timestep units='femtosecond'> 0.5 </timestep>
+      </dynamics>
+    </motion>
+    <ensemble>
+      <temperature units='kelvin'> 1e-9 </temperature>
+    </ensemble>
+  </system>
+</simulation>
