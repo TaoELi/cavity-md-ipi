@@ -102,7 +102,7 @@ class InputSimulation(Input):
               "ffyaff": (iforcefields.InputFFYaff, {"help": iforcefields.InputFFYaff.default_help}),
               "ffsgdml": (iforcefields.InputFFsGDML, {"help": iforcefields.InputFFsGDML.default_help}),
               "ffcavphsocket": (iforcefields.InputFFCavPhSocket, {"help": iforcefields.InputFFCavPhSocket.default_help}),
-              "ffcavph2dsocket": (iforcefields.InputFFCavPh2DSocket, {"help": iforcefields.InputFFCavPh2DSocket.default_help}),
+              "ffcavphfpsocket": (iforcefields.InputFFCavPhFPSocket, {"help": iforcefields.InputFFCavPhFPSocket.default_help}),
               "ffcavph": (iforcefields.InputFFCavPh, {"help": iforcefields.InputFFCavPh.default_help}),
     }
 
@@ -177,10 +177,10 @@ class InputSimulation(Input):
                     _iobj = iforcefields.InputFFCavPhSocket()
                     _iobj.store(_obj)
                     self.extra[_ii] = ("ffcavphsocket", _iobj)
-                elif isinstance(_obj, eforcefields.FFCavPh2DSocket):
-                    _iobj = iforcefields.InputFFCavPh2DSocket()
+                elif isinstance(_obj, eforcefields.FFCavPhFPSocket):
+                    _iobj = iforcefields.InputFFCavPhFPSocket()
                     _iobj.store(_obj)
-                    self.extra[_ii] = ("ffcavph2dsocket", _iobj)
+                    self.extra[_ii] = ("ffcavphfpsocket", _iobj)
                 elif isinstance(_obj, eforcefields.FFCavPh):
                     _iobj = iforcefields.InputFFCavPh()
                     _iobj.store(_obj)
@@ -218,7 +218,7 @@ class InputSimulation(Input):
                 syslist.append(v.fetch())
             elif k == "system_template":
                 syslist += v.fetch()  # this will actually generate automatically a bunch of system objects with the desired properties set automatically to many values
-            elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" or k == "ffsgdml" or k== "ffyaff" or k == "ffcavphsocket" or k == "ffcavph2dsocket" or k == "ffcavph":
+            elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" or k == "ffsgdml" or k== "ffyaff" or k == "ffcavphsocket" or k == "ffcavphfpsocket" or k == "ffcavph":
                 info(" # @simulation: Fetching" + k, verbosity.low)
                 fflist.append(v.fetch())
 
