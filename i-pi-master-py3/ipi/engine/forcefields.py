@@ -915,28 +915,28 @@ class PhotonDriverFabryPerot():
             self.ky_grid_1d = self.kx_grid_1d
             self.kx_grid_2d = self.kx_grid_1d
             self.ky_grid_2d = self.kx_grid_1d
-        print("kx_grid_1d", self.kx_grid_1d)
-        print("ky_grid_1d", self.ky_grid_1d)
-        print("kx_grid_2d", self.kx_grid_2d)
-        print("ky_grid_2d", self.ky_grid_2d)
+        #print("kx_grid_1d", self.kx_grid_1d)
+        #print("ky_grid_1d", self.ky_grid_1d)
+        #print("kx_grid_2d", self.kx_grid_2d)
+        #print("ky_grid_2d", self.ky_grid_2d)
 
         # construct cavity mode frequency array for all photon dimensions
         omega_parallel = np.reshape( ((self.kx_grid_2d / np.pi * self.domega_x)**2 
                          + (self.ky_grid_2d / np.pi * self.domega_y)**2)**0.5, -1)
-        print("omega_parallel", omega_parallel)
+        print("omega_parallel in cm-1", omega_parallel * self.hartree_to_cminv)
         self.omega_k = (self.omega_c**2 + omega_parallel**2)**0.5
-        print("omega_k", self.omega_k)
+        print("omega_k in cm-1", self.omega_k * self.hartree_to_cminv)
         self.omega_klambda = np.concatenate((self.omega_k, self.omega_k))
-        print("omega_klambda", self.omega_klambda)
+        #print("omega_klambda", self.omega_klambda)
         self.omega_klambda3 = np.reshape(np.array([[x,x,x] for x in self.omega_klambda]), -1)
-        print("omega_klambda3", self.omega_klambda3)
+        #print("omega_klambda3", self.omega_klambda3)
 
         # construct varepsilon array for all photon dimensions
         self.varepsilon_k = self.E0 * self.omega_k / np.min(self.omega_k)
         self.varepsilon_klambda = self.E0 * self.omega_klambda / np.min(self.omega_klambda)
         self.varepsilon_klambda3 = self.E0 * self.omega_klambda3 / np.min(self.omega_klambda3)
-        print("varepsilon_klambda", self.varepsilon_klambda)
-        print("varepsilon3", self.varepsilon_klambda3)
+        #print("varepsilon_klambda", self.varepsilon_klambda)
+        #print("varepsilon3", self.varepsilon_klambda3)
 
         # construct renormalized cavity mode function for each molecular grid point
         self.ftilde_kx = np.zeros((self.n_mode, self.n_grid))
@@ -947,12 +947,12 @@ class PhotonDriverFabryPerot():
             self.ftilde_ky[:, i] = 2.0 * np.sin(self.kx_grid_2d * x) * np.cos(self.ky_grid_2d * y)
         self.ftilde_kx3 = np.reshape(np.array([[x, x, x] for x in self.ftilde_kx]), -1)
         self.ftilde_ky3 = np.reshape(np.array([[x, x, x] for x in self.ftilde_ky]), -1)
-        print("x_grid_2d", self.x_grid_2d)
-        print("y_grid_2d", self.y_grid_2d)
-        print("kx_grid_2d", self.kx_grid_2d)
-        print("ky_grid_2d", self.ky_grid_2d)
-        print("f_kx", self.ftilde_kx)
-        print("f_ky", self.ftilde_ky)
+        print("x_grid_2d (units of Lx, Ly)", self.x_grid_2d)
+        print("y_grid_2d (units of Lx, Ly)", self.y_grid_2d)
+        #print("kx_grid_2d", self.kx_grid_2d)
+        #print("ky_grid_2d", self.ky_grid_2d)
+        print("mode function f_kx", self.ftilde_kx)
+        print("mode function f_ky", self.ftilde_ky)
          
     def split_atom_ph_coord(self, pos):
 
