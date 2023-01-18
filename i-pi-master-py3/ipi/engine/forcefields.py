@@ -828,7 +828,7 @@ class PhotonDriverFabryPerot():
     """
     def __init__(self, apply_photon=True, E0=1e-4, omega_c_cminv=3400.0, domega_x_cminv=100.0, 
             domega_y_cminv=100.0, n_mode_x=4, n_mode_y=3, x_grid_1d=np.array([0.1, 0.5, 0.9]), 
-            y_grid_1d=np.array([0.1, 0.5]), ph_constraint="none"):
+            y_grid_1d=np.array([0.1, 0.5]), ph_constraint="none", ph_rep="loose"):
 
         """
         Initialise PhotonDriverFabryPerot
@@ -856,9 +856,10 @@ class PhotonDriverFabryPerot():
             self.n_mode_y = 0
 
         if self.apply_photon:
-            self.init_fabry_perot_geometry(self.ph_constraint)
+            self.ph_rep = ph_rep
+            self.init_fabry_perot_geometry(self.ph_constraint, self.ph_rep)
     
-    def init_fabry_perot_geometry(self, ph_constraint):
+    def init_fabry_perot_geometry(self, ph_constraint, ph_rep="loose"):
 
         """
         Initialize the 2D Fabry-Perot geometry and prepare parameters for calculations
@@ -892,7 +893,10 @@ class PhotonDriverFabryPerot():
 
         # predefined quantities
         self.n_mode = self.n_mode_x * self.n_mode_y
-        self.n_photon = 2 * self.n_mode
+        if ph_rep == "loose":
+            self.n_photon = 2 * self.n_mode
+        elif ph_rep == "dense":
+            self.n_photon = self.n_mode
         self.n_photon_3 = self.n_photon * 3
         self.pos_ph = np.zeros(self.n_photon_3)
 
@@ -926,7 +930,10 @@ class PhotonDriverFabryPerot():
         print("omega_parallel in cm-1", omega_parallel * self.hartree_to_cminv)
         self.omega_k = (self.omega_c**2 + omega_parallel**2)**0.5
         print("omega_k in cm-1", self.omega_k * self.hartree_to_cminv)
-        self.omega_klambda = np.concatenate((self.omega_k, self.omega_k))
+        if ph_rep == "loose":
+            self.omega_klambda = np.concatenate((self.omega_k, self.omega_k))
+        elif ph_rep == "dense":
+            self.omega_klambda = self.omega_k
         #print("omega_klambda", self.omega_klambda)
         self.omega_klambda3 = np.reshape(np.array([[x,x,x] for x in self.omega_klambda]), -1)
         #print("omega_klambda3", self.omega_klambda3)
@@ -995,8 +1002,12 @@ class PhotonDriverFabryPerot():
         d_dot_f_y = np.dot(self.ftilde_ky, dy_array)
 
         # calculate the light-matter interaction
-        e_int_x = np.sum(self.varepsilon_k * d_dot_f_x * self.pos_ph[:self.n_mode*3:3])
-        e_int_y = np.sum(self.varepsilon_k * d_dot_f_y * self.pos_ph[1+self.n_mode*3::3])
+        if self.ph_rep == "loose":
+            e_int_x = np.sum(self.varepsilon_k * d_dot_f_x * self.pos_ph[:self.n_mode*3:3])
+            e_int_y = np.sum(self.varepsilon_k * d_dot_f_y * self.pos_ph[1+self.n_mode*3::3])
+        elif self.ph_rep == "dense":
+            e_int_x = np.sum(self.varepsilon_k * d_dot_f_x * self.pos_ph[::3])
+            e_int_y = np.sum(self.varepsilon_k * d_dot_f_y * self.pos_ph[1::3])
 
         # calculate the dipole self-energy term
         dse = np.sum((self.varepsilon_k**2 / 2.0 / self.omega_k**2) * (d_dot_f_x**2 + d_dot_f_y**2))
@@ -1023,8 +1034,12 @@ class PhotonDriverFabryPerot():
         d_dot_f_x = np.dot(self.ftilde_kx, dx_array)
         d_dot_f_y = np.dot(self.ftilde_ky, dy_array)  
         # calculate the force due to light-matter interactions
-        f_ph[:self.n_mode*3:3] -= self.varepsilon_k * d_dot_f_x
-        f_ph[self.n_mode*3+1::3] -= self.varepsilon_k * d_dot_f_y     
+        if self.ph_rep == "loose":
+            f_ph[:self.n_mode*3:3] -= self.varepsilon_k * d_dot_f_x
+            f_ph[self.n_mode*3+1::3] -= self.varepsilon_k * d_dot_f_y
+        elif self.ph_rep == "dense":  
+            f_ph[::3] -= self.varepsilon_k * d_dot_f_x
+            f_ph[1::3] -= self.varepsilon_k * d_dot_f_y   
         return f_ph
 
     def get_nuc_cav_forces(self, dx_array, dy_array, charge_array_bath):
@@ -1046,8 +1061,12 @@ class PhotonDriverFabryPerot():
         d_dot_f_y = np.dot(self.ftilde_ky, dy_array)
 
         # cavity force on x direction
-        Ekx = self.varepsilon_k * self.pos_ph[:self.n_mode*3:3]  
-        Eky = self.varepsilon_k * self.pos_ph[self.n_mode*3+1::3]  
+        if self.ph_rep == "loose":
+            Ekx = self.varepsilon_k * self.pos_ph[:self.n_mode*3:3]  
+            Eky = self.varepsilon_k * self.pos_ph[self.n_mode*3+1::3]  
+        elif self.ph_rep == "dense":
+            Ekx = self.varepsilon_k * self.pos_ph[::3]  
+            Eky = self.varepsilon_k * self.pos_ph[1::3]  
         Ekx += self.varepsilon_k**2/self.omega_k**2 * d_dot_f_x
         Eky += self.varepsilon_k**2/self.omega_k**2 * d_dot_f_y
 
@@ -1087,7 +1106,7 @@ class FFCavPhFPSocket(ForceField):
                  charge_array=None,
                  apply_photon=True, E0=1e-4, omega_c_cminv=3400.0, domega_x_cminv=100.0, 
                  domega_y_cminv=100.0, n_mode_x=4, n_mode_y=3, x_grid_1d=np.array([0.1, 0.5, 0.9]), 
-                 y_grid_1d=np.array([0.1, 0.5]), ph_constraint="none"):
+                 y_grid_1d=np.array([0.1, 0.5]), ph_constraint="none", ph_rep="loose"):
 
         """Initialises FFCavPhFPSocket.
 
@@ -1132,14 +1151,15 @@ class FFCavPhFPSocket(ForceField):
         # define the photon environment
         self.ph = PhotonDriverFabryPerot(apply_photon=apply_photon, E0=E0, omega_c_cminv=omega_c_cminv, 
                     domega_x_cminv=domega_x_cminv, domega_y_cminv=domega_y_cminv, n_mode_x=n_mode_x, 
-                    n_mode_y=n_mode_y, x_grid_1d=x_grid_1d, y_grid_1d=y_grid_1d, ph_constraint=ph_constraint)
+                    n_mode_y=n_mode_y, x_grid_1d=x_grid_1d, y_grid_1d=y_grid_1d, ph_constraint=ph_constraint,
+                    ph_rep=ph_rep)
 
         self._getallcount = 0
 
-    def calc_dipole_xy_mm(self, pos, n_bath, charge_array_bath):
+    def calc_dipole_xyz_mm(self, pos, n_bath, charge_array_bath):
 
         """
-        Calculate the x and y components of total dipole moment for a single molecular bath (grid point)
+        Calculate the x, y, and z components of total dipole moment for a single molecular bath (grid point)
 
         Args:
             pos: position of all atoms (3*n) in all baths
@@ -1147,21 +1167,24 @@ class FFCavPhFPSocket(ForceField):
             charge_array_bath: charge_array of all atoms (n) in a single bath
         
         Returns: 
-            dx_array, dy_array: total dipole moment array along x and y direction
+            dx_array, dy_array, dz_array: total dipole moment array along x, y, and z directions
         """
         ndim_tot = np.size(pos)
         ndim_local = int(ndim_tot // n_bath)
 
-        dx_array, dy_array = [], []
+        dx_array, dy_array, dz_array = [], [], []
         for idx in range(n_bath):
             pos_bath = pos[ndim_local*idx:ndim_local*(idx+1)]
             dx = np.sum(pos_bath[::3] * charge_array_bath)
             dy = np.sum(pos_bath[1::3] * charge_array_bath)
+            dz = np.sum(pos_bath[2::3] * charge_array_bath)
             dx_array.append(dx)
             dy_array.append(dy)
+            dz_array.append(dz)
         dx_array = np.array(dx_array)
         dy_array = np.array(dy_array)
-        return dx_array, dy_array
+        dz_array = np.array(dz_array)
+        return dx_array, dy_array, dz_array
 
     def queue(self, atoms, cell, reqid=-1):
         """Adds a request.
@@ -1217,13 +1240,10 @@ class FFCavPhFPSocket(ForceField):
         
         newreq_lst = []
 
-        t1 = time.time()
         # 1. split coordinates to atoms and photons
         pbcpos_atoms, pbcpos_phs = self.ph.split_atom_ph_coord(pbcpos)
         ndim_tot = np.size(pbcpos_atoms)
         ndim_local = int(ndim_tot // self.n_independent_bath)
-
-        t2 = time.time()
 
         # 2. for atomic coordinates, we now evaluate their atomic forces
         for idx in range(self.n_independent_bath):
@@ -1247,17 +1267,14 @@ class FFCavPhFPSocket(ForceField):
             })
             newreq_lst.append(newreq_local)
 
-        t3 = time.time()
         with self._threadlock:
             for newreq in newreq_lst:
                 self.requests.append(newreq)
                 self._getallcount += 1
 
-        t4 = time.time()
         if not self.threaded:
             self.poll()
 
-        t5 = time.time()
         # sleeps until all the new requests have been evaluated
         import sys
         for self.request in newreq_lst:
@@ -1288,14 +1305,6 @@ class FFCavPhFPSocket(ForceField):
             self.release(self.request)
             self.request = None
 
-        t6 = time.time()
-        """
-        print("t2-t1", t2-t1)
-        print("t3-t2", t3-t2)
-        print("t4-t3", t4-t3)
-        print("t5-t4", t5-t4)
-        print("t6-t5", t6-t5)
-        """
         # ...atomic forces have been calculated at this point
         
         # 3. At this moment, we combine the small requests to a big mega request (update results)
@@ -1310,7 +1319,7 @@ class FFCavPhFPSocket(ForceField):
 
         if self.ph.apply_photon:
             # 4. calculate total dipole moment array for N baths
-            dx_array, dy_array = self.calc_dipole_xy_mm(pos=pbcpos_atoms, n_bath=self.n_independent_bath, charge_array_bath=self.charge_array)
+            dx_array, dy_array, dz_array = self.calc_dipole_xyz_mm(pos=pbcpos_atoms, n_bath=self.n_independent_bath, charge_array_bath=self.charge_array)
             #info("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, dipole_z_tot), verbosity.medium)
             # 5. calculate photonic contribution of total energy
             e_ph = self.ph.get_ph_energy(dx_array=dx_array, dy_array=dy_array)

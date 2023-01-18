@@ -563,6 +563,9 @@ class InputFFCavPhFPSocket(InputForceField):
               "ph_constraint": (InputValue, {"dtype": str,
                                        "default": "none",
                                        "help": "Additional constraint added on the cavity photon environment"}),
+              "ph_rep": (InputValue, {"dtype": str,
+                                       "default": "loose",
+                                       "help": "option: loose | dense, dofferent representations of ph coordinates"}),
             }
     attribs = {
         "mode": (InputAttribute, {"dtype": str,
@@ -621,6 +624,7 @@ class InputFFCavPhFPSocket(InputForceField):
         self.x_grid_1d.store(ff.x_grid_1d)
         self.y_grid_1d.store(ff.y_grid_1d)
         self.ph_constraint.store(ff.ph_constraint)
+        self.ph_rep.store(ff.ph_rep)
 
     def fetch(self):
         """Creates a ForceSocket object.
@@ -645,7 +649,7 @@ class InputFFCavPhFPSocket(InputForceField):
                         apply_photon=self.apply_photon.fetch(), E0=self.E0.fetch(), omega_c_cminv=self.omega_c_cminv.fetch(), 
                         domega_x_cminv=self.domega_x_cminv.fetch(), domega_y_cminv=self.domega_y_cminv.fetch(), 
                         n_mode_x=self.n_mode_x.fetch(), n_mode_y=self.n_mode_y.fetch(), x_grid_1d=self.x_grid_1d.fetch(), 
-                        y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch())
+                        y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch(), ph_rep=self.ph_rep)
 
     def check(self):
         """Deals with optional parameters."""
