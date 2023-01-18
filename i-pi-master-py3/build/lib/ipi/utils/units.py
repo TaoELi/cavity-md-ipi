@@ -45,6 +45,7 @@ class Elements(dict):
         "LH": 2000.00 / Constants.amu,
         "X": 1.0000 / Constants.amu,
         "H": 1.00794,
+        "Hh": 1.00794e4,
         "Z": 1.382943,   # an interpolated H-D atom, based on y=1/sqrt(m) scaling
         "D": 2.0141,
         "H2": 2.0160,

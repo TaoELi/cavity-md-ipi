@@ -23,7 +23,6 @@ from ipi.utils.depend import dstrip
 from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal, unit_to_user, UnitMap
 from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
-from ipi.interfaces.cavph2dsockets import InterfaceCavPh2DSocket
 from ipi.interfaces.photons import photons
 
 try:
@@ -822,14 +821,273 @@ class FFCavPhSocket(ForceField):
             self._thread.join()
         self.socket.close()
 
-class FFCavPh2DSocket(ForceField):
+class PhotonDriverFabryPerot():
+
+    """
+    Photon driver to deal with 2D photonic environment in a Fabry-Perot cavity
+    """
+    def __init__(self, apply_photon=True, E0=1e-4, omega_c_cminv=3400.0, domega_x_cminv=100.0, 
+            domega_y_cminv=100.0, n_mode_x=4, n_mode_y=3, x_grid_1d=np.array([0.1, 0.5, 0.9]), 
+            y_grid_1d=np.array([0.1, 0.5]), ph_constraint="none", ph_rep="loose"):
+
+        """
+        Initialise PhotonDriverFabryPerot
+
+        In this implementation, the photonic masses are set as 1 a.u.
+
+        Args:
+            xxx
+        """
+        self.hartree_to_cminv = 219474.63
+        self.apply_photon = apply_photon
+        self.E0 = E0
+        self.omega_c = omega_c_cminv / self.hartree_to_cminv
+        print(omega_c_cminv, self.hartree_to_cminv)
+        self.domega_x = domega_x_cminv / self.hartree_to_cminv
+        self.domega_y = domega_y_cminv / self.hartree_to_cminv
+        self.n_mode_x = n_mode_x
+        self.n_mode_y = n_mode_y
+        self.x_grid_1d = x_grid_1d # units of Lx
+        self.y_grid_1d = y_grid_1d # units of Ly
+        self.ph_constraint = ph_constraint
+
+        if self.apply_photon is False:
+            self.n_mode_x = 0
+            self.n_mode_y = 0
+
+        if self.apply_photon:
+            self.ph_rep = ph_rep
+            print("ph_rep", self.ph_rep)
+            self.init_fabry_perot_geometry(self.ph_constraint, self.ph_rep)
+    
+    def init_fabry_perot_geometry(self, ph_constraint="none", ph_rep="loose"):
+
+        """
+        Initialize the 2D Fabry-Perot geometry and prepare parameters for calculations
+        """
+        # constraint
+        self.kx_coeff = 1.0
+        self.ky_coeff = 1.0
+
+        # Apply constraint
+        if ph_constraint == "single_mode":
+            self.domega_x = 0.0
+            self.domega_y = 0.0
+            self.n_mode_x = 1
+            self.n_mode_y = 1
+            self.x_grid_1d = np.array([0.25])
+            self.y_grid_1d = np.array([0.25])
+        elif ph_constraint == "ky=0":
+            self.domega_y = 0.0
+            self.n_mode_y = 1
+            self.y_grid_1d = np.array([0.])
+            self.ky_coeff = 0.0
+        elif ph_constraint == "kx=0":
+            self.domega_x = 0.0
+            self.n_mode_x = 1
+            self.x_grid_1d = np.array([0.])
+            self.kx_coeff = 0.0
+        elif ph_constraint == "kx=ky":
+            self.domega_y = 0.0
+            self.n_mode_y = 1
+            self.y_grid_1d = self.x_grid_1d
+
+        # predefined quantities
+        self.n_mode = self.n_mode_x * self.n_mode_y
+        if ph_rep == "loose":
+            self.n_photon = 2 * self.n_mode
+        elif ph_rep == "dense":
+            self.n_photon = self.n_mode
+        self.n_photon_3 = self.n_photon * 3
+        self.pos_ph = np.zeros(self.n_photon_3)
+
+        # generate 2D grid points of molecular bath coords in units of Lx, Ly
+        self.x_grid_2d, self.y_grid_2d = np.meshgrid(self.x_grid_1d, self.y_grid_1d)
+        self.x_grid_2d = np.reshape(self.x_grid_2d, -1)
+        self.y_grid_2d = np.reshape(self.y_grid_2d, -1)
+        if ph_constraint == "kx=ky":
+            self.x_grid_2d = self.x_grid_1d
+            self.y_grid_2d = self.x_grid_1d
+        self.n_grid = np.size(self.x_grid_2d)
+
+        # generate 2D grid points of kx, ky in units of 1/Lx, 1/Ly
+        self.kx_grid_1d = np.pi * np.array([i+1.0 for i in range(self.n_mode_x)]) * self.kx_coeff
+        self.ky_grid_1d = np.pi * np.array([i+1.0 for i in range(self.n_mode_y)]) * self.ky_coeff
+        self.kx_grid_2d, self.ky_grid_2d = np.meshgrid(self.kx_grid_1d, self.ky_grid_1d)
+        self.kx_grid_2d = np.reshape(self.kx_grid_2d, -1)
+        self.ky_grid_2d = np.reshape(self.ky_grid_2d, -1)
+        if ph_constraint == "kx=ky":
+            self.ky_grid_1d = self.kx_grid_1d
+            self.kx_grid_2d = self.kx_grid_1d
+            self.ky_grid_2d = self.kx_grid_1d
+        #print("kx_grid_1d", self.kx_grid_1d)
+        #print("ky_grid_1d", self.ky_grid_1d)
+        #print("kx_grid_2d", self.kx_grid_2d)
+        #print("ky_grid_2d", self.ky_grid_2d)
+
+        # construct cavity mode frequency array for all photon dimensions
+        omega_parallel = np.reshape( ((self.kx_grid_2d / np.pi * self.domega_x)**2 
+                         + (self.ky_grid_2d / np.pi * self.domega_y)**2)**0.5, -1)
+        print("omega_parallel in cm-1", omega_parallel * self.hartree_to_cminv)
+        self.omega_k = (self.omega_c**2 + omega_parallel**2)**0.5
+        print("omega_k in cm-1", self.omega_k * self.hartree_to_cminv)
+        if ph_rep == "loose":
+            self.omega_klambda = np.concatenate((self.omega_k, self.omega_k))
+        elif ph_rep == "dense":
+            self.omega_klambda = self.omega_k
+        #print("omega_klambda", self.omega_klambda)
+        self.omega_klambda3 = np.reshape(np.array([[x,x,x] for x in self.omega_klambda]), -1)
+        #print("omega_klambda3", self.omega_klambda3)
+
+        # construct varepsilon array for all photon dimensions
+        self.varepsilon_k = self.E0 * self.omega_k / np.min(self.omega_k)
+        self.varepsilon_klambda = self.E0 * self.omega_klambda / np.min(self.omega_klambda)
+        self.varepsilon_klambda3 = self.E0 * self.omega_klambda3 / np.min(self.omega_klambda3)
+        #print("varepsilon_klambda", self.varepsilon_klambda)
+        #print("varepsilon3", self.varepsilon_klambda3)
+
+        # construct renormalized cavity mode function for each molecular grid point
+        self.ftilde_kx = np.zeros((self.n_mode, self.n_grid))
+        self.ftilde_ky = np.zeros((self.n_mode, self.n_grid))
+        for i in range(self.n_grid):
+            x, y = self.x_grid_2d[i], self.y_grid_2d[i]
+            self.ftilde_kx[:, i] = 2.0 * np.cos(self.kx_grid_2d * x) * np.sin(self.ky_grid_2d * y)
+            self.ftilde_ky[:, i] = 2.0 * np.sin(self.kx_grid_2d * x) * np.cos(self.ky_grid_2d * y)
+        self.ftilde_kx3 = np.reshape(np.array([[x, x, x] for x in self.ftilde_kx]), -1)
+        self.ftilde_ky3 = np.reshape(np.array([[x, x, x] for x in self.ftilde_ky]), -1)
+        print("x_grid_2d (units of Lx, Ly)", self.x_grid_2d)
+        print("y_grid_2d (units of Lx, Ly)", self.y_grid_2d)
+        #print("kx_grid_2d", self.kx_grid_2d)
+        #print("ky_grid_2d", self.ky_grid_2d)
+        print("mode function f_kx", self.ftilde_kx)
+        print("mode function f_ky", self.ftilde_ky)
+         
+    def split_atom_ph_coord(self, pos):
+
+        """
+        Split atomic and photonic coordinates and update our photonic coordinates
+
+        Args:
+            pos: A 3*N position numpy array, [1x, 1y, 1z, 2x, ...]
+        
+        Returns: 
+            Atomic coordinates, Photonic coordinates
+        """
+        if self.apply_photon:
+            pos_at = pos[:-self.n_photon_3]
+            pos_ph = pos[-self.n_photon_3:]
+            self.pos_ph = pos_ph
+        else:
+            pos_at = pos
+            pos_ph = pos[0:0]
+        return pos_at, pos_ph
+
+    def get_ph_energy(self, dx_array, dy_array):
+        
+        """
+        Calculate the total photonic potential energy, including the light-matter
+        interaction and dipole self energy
+
+        Args:
+            dx_array: x-direction dipole array of molecular subsystems in 2d grid
+            dy_array: y-direction dipole array of molecular subsystems in 2d grid
+        
+        Returns:
+            total energy of photonic system
+        """
+        # calculate the photonic potential energy
+        e_ph = np.sum(0.5 * self.omega_klambda3**2 * self.pos_ph**2)
+        
+        # calculate the dot products between mode functions and dipole array
+        d_dot_f_x = np.dot(self.ftilde_kx, dx_array)
+        d_dot_f_y = np.dot(self.ftilde_ky, dy_array)
+
+        # calculate the light-matter interaction
+        if self.ph_rep == "loose":
+            e_int_x = np.sum(self.varepsilon_k * d_dot_f_x * self.pos_ph[:self.n_mode*3:3])
+            e_int_y = np.sum(self.varepsilon_k * d_dot_f_y * self.pos_ph[1+self.n_mode*3::3])
+        elif self.ph_rep == "dense":
+            e_int_x = np.sum(self.varepsilon_k * d_dot_f_x * self.pos_ph[::3])
+            e_int_y = np.sum(self.varepsilon_k * d_dot_f_y * self.pos_ph[1::3])
+
+        # calculate the dipole self-energy term
+        dse = np.sum((self.varepsilon_k**2 / 2.0 / self.omega_k**2) * (d_dot_f_x**2 + d_dot_f_y**2))
+
+        e_tot = e_ph + e_int_x + e_int_y + dse
+
+        return e_tot
+
+    def get_ph_forces(self, dx_array, dy_array):
+        
+        """
+        Calculate the photonic forces 
+
+        Args:
+            dx_array: x-direction dipole array of molecular subsystems in 2d grid
+            dy_array: y-direction dipole array of molecular subsystems in 2d grid
+        
+        Returns:
+            force array of all photonic dimensions (3*nphoton) [1x, 1y, 1z, 2x..]
+        """
+        # calculat the bare photonic contribution of the force
+        f_ph = - self.omega_klambda3**2 * self.pos_ph
+        # calculate the dot products between mode functions and dipole array
+        d_dot_f_x = np.dot(self.ftilde_kx, dx_array)
+        d_dot_f_y = np.dot(self.ftilde_ky, dy_array)  
+        # calculate the force due to light-matter interactions
+        if self.ph_rep == "loose":
+            f_ph[:self.n_mode*3:3] -= self.varepsilon_k * d_dot_f_x
+            f_ph[self.n_mode*3+1::3] -= self.varepsilon_k * d_dot_f_y
+        elif self.ph_rep == "dense":  
+            f_ph[::3] -= self.varepsilon_k * d_dot_f_x
+            f_ph[1::3] -= self.varepsilon_k * d_dot_f_y   
+        return f_ph
+
+    def get_nuc_cav_forces(self, dx_array, dy_array, charge_array_bath):
+        
+        """
+        Calculate the photonic forces on nuclei from MM partial charges
+
+        Args:
+            dx_array: x-direction dipole array of molecular subsystems in 2d grid
+            dy_array: y-direction dipole array of molecular subsystems in 2d grid
+            charge_array_bath: partial charges of all atoms in a single bath
+        
+        Returns:
+            force array of all nuclear dimensions (3*natoms) [1x, 1y, 1z, 2x..]
+        """
+
+        # calculate the dot products between mode functions and dipole array
+        d_dot_f_x = np.dot(self.ftilde_kx, dx_array)
+        d_dot_f_y = np.dot(self.ftilde_ky, dy_array)
+
+        # cavity force on x direction
+        if self.ph_rep == "loose":
+            Ekx = self.varepsilon_k * self.pos_ph[:self.n_mode*3:3]  
+            Eky = self.varepsilon_k * self.pos_ph[self.n_mode*3+1::3]  
+        elif self.ph_rep == "dense":
+            Ekx = self.varepsilon_k * self.pos_ph[::3]  
+            Eky = self.varepsilon_k * self.pos_ph[1::3]  
+        Ekx += self.varepsilon_k**2/self.omega_k**2 * d_dot_f_x
+        Eky += self.varepsilon_k**2/self.omega_k**2 * d_dot_f_y
+
+        # dimension of independent baths (xy grid points)
+        coeff_x = np.dot(np.transpose(Ekx), self.ftilde_kx)
+        coeff_y = np.dot(np.transpose(Eky), self.ftilde_ky)
+        fx = -np.kron(coeff_x, charge_array_bath)
+        fy = -np.kron(coeff_y, charge_array_bath)
+        return fx, fy
+
+class FFCavPhFPSocket(ForceField):
 
     """
     Socket for dealing with cavity photons interacting with molecules by
-    Tao E. Li @ 2020-09-28
+    Tao E. Li @ 2023-01-15
     Check https://doi.org/10.1073/pnas.2009272117 for details
 
     Interface between the PIMD code and a socket for a single replica.
+
+    Independent bath approximation will be made to communicate with many sockets
 
     Deals with an individual replica of the system, obtaining the potential
     force and virial appropriate to this system. Deals with the distribution of
@@ -841,8 +1099,17 @@ class FFCavPh2DSocket(ForceField):
     """
 
     def __init__(self, latency=1.0, name="", pars=None, dopbc=False,
-                 active=np.array([-1]), threaded=True, interface=None):
-        """Initialises FFCavPh2DSocket.
+                 active=np.array([-1]), threaded=True, interface=None,
+                 n_independent_bath=1,
+                 n_qm_atom=0,
+                 mm_charge_array=None,
+                 qm_charge_array=None,
+                 charge_array=None,
+                 apply_photon=True, E0=1e-4, omega_c_cminv=3400.0, domega_x_cminv=100.0, 
+                 domega_y_cminv=100.0, n_mode_x=4, n_mode_y=3, x_grid_1d=np.array([0.1, 0.5, 0.9]), 
+                 y_grid_1d=np.array([0.1, 0.5]), ph_constraint="none", ph_rep="loose"):
+
+        """Initialises FFCavPhFPSocket.
 
         Args:
            latency: The number of seconds the socket will wait before updating
@@ -857,12 +1124,245 @@ class FFCavPh2DSocket(ForceField):
         """
 
         # a socket to the communication library is created or linked
-        super(FFCavPh2DSocket, self).__init__(latency, name, pars, dopbc, active, threaded)
+        super(FFCavPhFPSocket, self).__init__(latency, name, pars, dopbc, active, threaded)
         if interface is None:
-            self.socket = InterfaceCavPh2DSocket()
+            self.socket = InterfaceSocket()
         else:
             self.socket = interface
         self.socket.requests = self.requests
+
+        # definition of independent baths
+        self.n_independent_bath = n_independent_bath
+        self.mm_charge_array = mm_charge_array
+        self.qm_charge_array = qm_charge_array
+        self.charge_array = charge_array
+        self.n_qm_atom = n_qm_atom
+
+        # store photonic variables
+        self.apply_photon = apply_photon 
+        self.E0 = E0
+        self.omega_c_cminv = omega_c_cminv
+        self.domega_x_cminv = domega_x_cminv
+        self.domega_y_cminv = domega_y_cminv
+        self.n_mode_x = n_mode_x
+        self.n_mode_y = n_mode_y
+        self.x_grid_1d = x_grid_1d
+        self.y_grid_1d = y_grid_1d
+        self.ph_constraint = ph_constraint
+        self.ph_rep = ph_rep
+        # define the photon environment
+        self.ph = PhotonDriverFabryPerot(apply_photon=apply_photon, E0=E0, omega_c_cminv=omega_c_cminv, 
+                    domega_x_cminv=domega_x_cminv, domega_y_cminv=domega_y_cminv, n_mode_x=n_mode_x, 
+                    n_mode_y=n_mode_y, x_grid_1d=x_grid_1d, y_grid_1d=y_grid_1d, ph_constraint=ph_constraint,
+                    ph_rep=ph_rep)
+
+        self._getallcount = 0
+
+    def calc_dipole_xyz_mm(self, pos, n_bath, charge_array_bath):
+
+        """
+        Calculate the x, y, and z components of total dipole moment for a single molecular bath (grid point)
+
+        Args:
+            pos: position of all atoms (3*n) in all baths
+            n_bath: total number of molecular baths (grid points)
+            charge_array_bath: charge_array of all atoms (n) in a single bath
+        
+        Returns: 
+            dx_array, dy_array, dz_array: total dipole moment array along x, y, and z directions
+        """
+        ndim_tot = np.size(pos)
+        ndim_local = int(ndim_tot // n_bath)
+
+        dx_array, dy_array, dz_array = [], [], []
+        for idx in range(n_bath):
+            pos_bath = pos[ndim_local*idx:ndim_local*(idx+1)]
+            dx = np.sum(pos_bath[::3] * charge_array_bath)
+            dy = np.sum(pos_bath[1::3] * charge_array_bath)
+            dz = np.sum(pos_bath[2::3] * charge_array_bath)
+            dx_array.append(dx)
+            dy_array.append(dy)
+            dz_array.append(dz)
+        dx_array = np.array(dx_array)
+        dy_array = np.array(dy_array)
+        dz_array = np.array(dz_array)
+        return dx_array, dy_array, dz_array
+
+    def queue(self, atoms, cell, reqid=-1):
+        """Adds a request.
+
+        Note that the pars dictionary need to be sent as a string of a
+        standard format so that the initialisation of the driver can be done.
+
+        Args:
+            atoms: An Atoms object giving the atom positions.
+            cell: A Cell object giving the system box.
+            pars: An optional dictionary giving the parameters to be sent to the
+                driver for initialisation. Defaults to {}.
+            reqid: An optional integer that identifies requests of the same type,
+               e.g. the bead index
+
+        Returns:
+            A list giving the status of the request of the form {'pos': An array
+            giving the atom positions folded back into the unit cell,
+            'cell': Cell object giving the system box, 'pars': parameter string,
+            'result': holds the result as a list once the computation is done,
+            'status': a string labelling the status of the calculation,
+            'id': the id of the request, usually the bead number, 'start':
+            the starting time for the calculation, used to check for timeouts.}.
+        """
+
+        par_str = " "
+
+        if not self.pars is None:
+            for k, v in list(self.pars.items()):
+                par_str += k + " : " + str(v) + " , "
+        else:
+            par_str = " "
+
+        pbcpos = dstrip(atoms.q).copy()
+
+        # Indexes come from input in a per atom basis and we need to make a per atom-coordinate basis
+        # Reformat indexes for full system (default) or piece of system
+        # active atoms do not change but we only know how to build this array once we get the positions once
+        if self.iactive is None:
+            if self.active[0] == -1:
+                activehere = np.arange(len(pbcpos))
+            else:
+                activehere = np.array([[3 * n, 3 * n + 1, 3 * n + 2] for n in self.active])
+
+            # Reassign active indexes in order to use them
+            activehere = activehere.flatten()
+
+            # Perform sanity check for active atoms
+            if (len(activehere) > len(pbcpos) or activehere[-1] > (len(pbcpos) - 1)):
+                raise ValueError("There are more active atoms than atoms!")
+
+            self.iactive = activehere
+        
+        newreq_lst = []
+
+        # 1. split coordinates to atoms and photons
+        pbcpos_atoms, pbcpos_phs = self.ph.split_atom_ph_coord(pbcpos)
+        ndim_tot = np.size(pbcpos_atoms)
+        ndim_local = int(ndim_tot // self.n_independent_bath)
+
+        # 2. for atomic coordinates, we now evaluate their atomic forces
+        for idx in range(self.n_independent_bath):
+            pbcpos_local = pbcpos_atoms[ndim_local*idx:ndim_local*(idx+1)].copy()
+            iactive_local = self.iactive[0:ndim_local]
+            # Let's try to do PBC for the small regions
+            if self.dopbc:
+                cell.array_pbc(pbcpos_local)
+            newreq_local = ForceRequest({
+                "id": int(reqid*self.n_independent_bath) + idx,
+                "pos": pbcpos_local,
+                "active": iactive_local,
+                "cell": (dstrip(cell.h).copy(), dstrip(cell.ih).copy()),
+                "pars": par_str,
+                "result": None,
+                "status": "Queued",
+                "start": -1,
+                "t_queued": time.time(),
+                "t_dispatched": 0,
+                "t_finished": 0
+            })
+            newreq_lst.append(newreq_local)
+
+        with self._threadlock:
+            for newreq in newreq_lst:
+                self.requests.append(newreq)
+                self._getallcount += 1
+
+        if not self.threaded:
+            self.poll()
+
+        # sleeps until all the new requests have been evaluated
+        import sys
+        for self.request in newreq_lst:
+            while self.request["status"] != "Done":
+                if self.request["status"] == "Exit" or softexit.triggered:
+                # now, this is tricky. we are stuck here and we cannot return meaningful results.
+                # if we return, we may as well output wrong numbers, or mess up things.
+                # so we can only call soft-exit and wait until that is done. then kill the thread
+                # we are in.
+                    softexit.trigger(" @ FORCES : cannot return so will die off here")
+                    while softexit.exiting:
+                        time.sleep(self.latency)
+                    sys.exit()
+                time.sleep(self.latency)
+            
+            """
+            with self._threadlock:
+                self._getallcount -= 1
+
+            # releases just once, but wait for all requests to be complete
+            if self._getallcount == 0:
+                self.release(self.request)
+                self.request = None
+            else:
+                while self._getallcount > 0:
+                    time.sleep(self.latency)
+            """
+            self.release(self.request)
+            self.request = None
+
+        # ...atomic forces have been calculated at this point
+        
+        # 3. At this moment, we combine the small requests to a big mega request (update results)
+        result_tot = [0.0, np.zeros(len(pbcpos), float), np.zeros((3, 3), float), ""]
+        for idx, newreq in enumerate(newreq_lst):
+            u, f, vir, extra =  newreq["result"]
+            result_tot[0] += u
+            result_tot[1][ndim_local*idx:ndim_local*(idx+1)] = f
+            result_tot[2] += vir
+            result_tot[3] += extra
+
+
+        if self.ph.apply_photon:
+            # 4. calculate total dipole moment array for N baths
+            dx_array, dy_array, dz_array = self.calc_dipole_xyz_mm(pos=pbcpos_atoms, n_bath=self.n_independent_bath, charge_array_bath=self.charge_array)
+            #info("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, dipole_z_tot), verbosity.medium)
+            # 5. calculate photonic contribution of total energy
+            e_ph = self.ph.get_ph_energy(dx_array=dx_array, dy_array=dy_array)
+            # 6. calculate photonic forces
+            f_ph = self.ph.get_ph_forces(dx_array=dx_array, dy_array=dy_array)
+            # 7. calculate cavity forces on nuclei
+            fx_cav, fy_cav = self.ph.get_nuc_cav_forces(dx_array=dx_array, dy_array=dy_array, charge_array_bath=self.charge_array)
+            # 8. add cavity effects to our output
+            result_tot[0] += e_ph
+            result_tot[1][:ndim_tot:3] += fx_cav
+            result_tot[1][1:ndim_tot:3] += fy_cav
+            result_tot[1][ndim_tot:] = f_ph
+            # additional output for debugging
+            """
+            print("f_photon", f_ph)
+            print("e_photon", e_ph)
+            print("fx_nuc_cav", fx_cav[0:10])
+            print("fy_nuc_cav", fy_cav[0:10])
+            print("fx_cav dimension", fx_cav.size)
+            print("fy_cav dimension", fy_cav.size)
+            n_local = int(ndim_local // 3)
+            print("fx_nuc_cav 2", fx_cav[n_local:n_local+10])
+            print("fy_nuc_cav 2", fy_cav[n_local:n_local+10])
+            """
+        
+        # At this moment, we have sucessfully gathered the CavMD forces
+        newreq = ForceRequest({
+            "id": reqid,
+            "pos": pbcpos,
+            "active": self.iactive,
+            "cell": (dstrip(cell.h).copy(), dstrip(cell.ih).copy()),
+            "pars": par_str,
+            "result": result_tot,
+            "status": newreq_lst[-1]["status"],
+            "start": newreq_lst[0]["start"],
+            "t_queued": newreq_lst[0]["t_queued"],
+            "t_dispatched": newreq_lst[0]["t_dispatched"],
+            "t_finished": newreq_lst[-1]["t_finished"]
+        })        
+
+        return newreq
 
     def poll(self):
         """Function to check the status of the client calculations."""
@@ -873,12 +1373,12 @@ class FFCavPh2DSocket(ForceField):
         """Spawns a new thread."""
 
         self.socket.open()
-        super(FFCavPh2DSocket, self).start()
+        super(FFCavPhFPSocket, self).start()
 
     def stop(self):
         """Closes the socket and the thread."""
 
-        super(FFCavPh2DSocket, self).stop()
+        super(FFCavPhFPSocket, self).stop()
         if self._thread is not None:
             # must wait until loop has ended before closing the socket
             self._thread.join()
@@ -900,7 +1400,7 @@ class FFCavPh(ForceField):
                        'start': starting time}.
     """
 
-    def __init__(self, input_xyz_filename="", grad_method='', output_file='',
+    def __init__(self, input_xyz_filename="", grad_method='', output_file='', qchem_template='',
                 memory_usage="", numpy_memory=2, nthread=1,
                 latency=1.0, name="", pars=None, dopbc=False, threaded=False,
                 n_independent_bath=1,
@@ -920,6 +1420,7 @@ class FFCavPh(ForceField):
         super(FFCavPh, self).__init__(latency, name, pars, dopbc=False)
 
         self.Debye2AU = 1.0 /2.54174623
+        self.AU2Angstrom = 1.0 / 1.8897259886
         # Initialize for cavity photon related parts
         self.photons = photons()
         self.apply_photon = self.photons.apply_photon
@@ -934,6 +1435,7 @@ class FFCavPh(ForceField):
         self.numpy_memory = numpy_memory
         self.nthread = nthread
         self.name = name
+        self.qchem_template = qchem_template
         print("Ab initio code will read initial config from", self.input_xyz_filename)
         self.n_independent_bath = n_independent_bath
         if self.n_independent_bath > 1:
@@ -986,17 +1488,23 @@ class FFCavPh(ForceField):
             psi4.set_num_threads(self.nthread)
             psi4.core.set_output_file(self.output_file, False)
             if self.n_independent_bath == 1:
-                self.molec = psi4.geometry(self.init_nuclear_str)
+                print(self.init_nuclear_str)
+                self.molec = psi4.geometry(self.init_nuclear_str + "\n symmetry c1\n noreorient \n nocom")
             elif self.n_independent_bath > 1:
                 print("%d atoms in the original input xyz file %s" %(self.nat, self.input_xyz_filename))
                 print("With %d independent baths, each subsystem contains the following %d atoms:" %(self.n_independent_bath, self.nat_idb))
-                self.init_nuclear_str_idb = "\n".join(self.init_nuclear_str.split("\n")[:2])
+                self.init_nuclear_str_idb = "\n".join(self.init_nuclear_str.split("\n")[:self.nat_idb])
                 print(self.init_nuclear_str_idb)
-                self.molec = psi4.geometry(self.init_nuclear_str_idb)
+                self.molec = psi4.geometry(self.init_nuclear_str_idb + "\n symmetry c1\n noreorient \n nocom")
         elif self.name == "run_qe_driver.sh" or ("run_qc_driver" in self.name):
             print("Will run the bash script '%s' on the local path..." %self.name)
-        elif self.name == "run_neo_qc.sh":
+        elif self.name == "qchem-neo":
             print("Running semiclassical nuclear-electronic orbital (NEO) Ehrenfest dynamics")
+            # check if we have a template to create the qchem file
+            print("QChem jobs will be run from the following Q-Chem template: %s" %self.qchem_template)
+            with open(self.qchem_template, 'r') as f:
+                self.qchem_template_content = f.read()
+                print(self.qchem_template_content)
         else:
             raise ValueError("%s pythonic force field is unavailable currently" %self.name)
 
@@ -1026,13 +1534,23 @@ class FFCavPh(ForceField):
             str1 = ""
             for i in range(self.nat):
                 str1 += thefile.readline()
-            print("Atomic string is")
-            print(str1)
+            #print("Atomic string is")
+            #print(str1)
             # At the same time, I need a list to save the atomic labels
             self.atom_label_lst = str1.split()[::4]
-            print("atomic labels are", self.atom_label_lst)
+            #print("atomic labels are", self.atom_label_lst)
         self.nat_idb = int(self.nat / self.n_independent_bath)
         return str1
+
+    def construct_qchem_input(self, q, filename):
+        q = q.reshape((-1, 3)).copy()
+        with open(filename, 'w') as f:
+            f.write("$molecule\n0 1\n")
+            # write molecular geometry
+            for i in range(self.nat):
+                f.write("%s  %.10f  %.10f  %.10f\n" %(self.atom_label_lst[i], q[i,0], q[i,1], q[i,2]))
+            f.write("$end\n\n")
+            f.write(self.qchem_template_content)
 
     def poll(self):
         """ Polls the forcefield checking if there are requests that should
@@ -1069,9 +1587,9 @@ class FFCavPh(ForceField):
                 print("Error detected in getting gradients, try to rerun SCF...")
                 e, mf, dipole_x_tot, dipole_y_tot, dipole_z_tot, dipder_splitted = self.calc_bare_nuclear_force_dipder(q)
                 count_retry += 1
-                if (count_retry >= 5):
+                if (count_retry >= 50):
                     softexit.trigger("Error always detected in obtaining gradients, try to shutdown simulation...")
-            print("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, dipole_z_tot))
+            info("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, dipole_z_tot), verbosity.medium)
 
             # 2.3 Evaluate photonic energy (the same as FFCavPhSocket)
             e_photon = self.photons.obtain_potential()
@@ -1112,7 +1630,7 @@ class FFCavPh(ForceField):
                 print("Error detected in getting gradients, try to rerun SCF...")
                 e, mf = self.calc_bare_nuclear_force(q)
                 count_retry += 1
-                if (count_retry >= 5):
+                if (count_retry >= 50):
                     softexit.trigger("Error always detected in obtaining gradients, try to shutdown simulation...")
 
         # 3. Finally, update energy and forces
@@ -1256,7 +1774,31 @@ class FFCavPh(ForceField):
             print("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(mux_tot, muy_tot, muz_tot))
             self.error_flag == False
             return E_tot, force
-
+        elif self.name == "qchem-neo" and self.n_independent_bath == 1:
+            qchem_input_filename = self.qchem_template + ".in"
+            qchem_output_filename = self.qchem_template + ".out"
+            self.construct_qchem_input(q * self.AU2Angstrom, qchem_input_filename)
+            # run this qchem file
+            import subprocess
+            bashCommand = ["qchem", "-nt", "%d" %self.nthread, qchem_input_filename]
+            process = subprocess.Popen(bashCommand, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process.communicate()
+            # after running this command, get energy and gradients
+            try:
+                E = np.loadtxt("./current_state.e")
+                force = np.loadtxt("./current_state.grad").transpose()
+                mue_info = np.loadtxt("./current_state.dipole_e")
+                mun_info = np.loadtxt("./current_state.dipole_n")
+            except:
+                print("Error occurs when reading files")
+                self.error_flag = True
+                return 0, 0
+            force  = -1.0 * force.flatten()
+            print("force is", force, "with nthread", self.nthread)
+            print("energy is", E)
+            print("muex = %.6f muey = %.6f muez = %.6f [units of a.u.]" %(mue_info[0], mue_info[1], mue_info[2]))
+            print("munx = %.6f muny = %.6f munz = %.6f [units of a.u.]" %(mun_info[0], mun_info[1], mun_info[2]))
+            return E,  force
     def calc_bare_nuclear_force_dipder(self, q):
         if self.name == "psi4" and self.n_independent_bath == 1:
             import psi4
@@ -1273,17 +1815,23 @@ class FFCavPh(ForceField):
                 muy = psi4.core.variable('SCF DIPOLE Y') * self.Debye2AU
                 muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
             force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
-
-            H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
-            dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
-
-            # importantly, I need to split diper array to the desired ones
-            dmuxdx = dipder[0::3,0]
-            dmuydx = dipder[0::3,1]
-            dmuxdy = dipder[1::3,0]
-            dmuydy = dipder[1::3,1]
-            dmuxdz = dipder[2::3,0]
-            dmuydz = dipder[2::3,1]
+            if self.qm_charge_array.size > 0:
+                dmuxdx = self.qm_charge_array
+                dmuydx = np.zeros(self.qm_charge_array.size)
+                dmuxdy = np.zeros(self.qm_charge_array.size)
+                dmuydy = self.qm_charge_array
+                dmuxdz = np.zeros(self.qm_charge_array.size)
+                dmuydz = np.zeros(self.qm_charge_array.size)
+            else:
+                H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
+                dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
+                # importantly, I need to split diper array to the desired ones
+                dmuxdx = dipder[0::3,0]
+                dmuydx = dipder[0::3,1]
+                dmuxdy = dipder[1::3,0]
+                dmuydy = dipder[1::3,1]
+                dmuxdz = dipder[2::3,0]
+                dmuydz = dipder[2::3,1]
             dipder_splitted = (dmuxdx, dmuydx, dmuxdy, dmuydy, dmuxdz, dmuydz)
 
             # check the validity of the output values [be very careful]
@@ -1329,9 +1877,15 @@ class FFCavPh(ForceField):
                     muz = psi4.core.variable('SCF DIPOLE Z') * self.Debye2AU
                 force = -np.asarray(psi4.gradient(self.grad_method, ref_wfn=wfn, molecule=self.molec))
 
-                H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
-                dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
-
+                if self.qm_charge_array.size > 0:
+                    nsize = int(self.qm_charge_array.size * 3)
+                    dipder = np.zeros((nsize, 3))
+                    dipder[0::3,0] = self.qm_charge_array
+                    dipder[1::3,1] = self.qm_charge_array
+                    dipder[2::3,2] = self.qm_charge_array
+                else:
+                    H, wfn2 = psi4.hessian(self.grad_method, return_wfn=True, ref_wfn=wfn)
+                    dipder = wfn2.variable('SCF DIPOLE GRADIENT').np
                 E_tot += E
                 mux_tot += mux
                 muy_tot += muy
@@ -1411,10 +1965,14 @@ class FFCavPh(ForceField):
                 processes.append(process)
                 # Finally, try to remove the previous potential files
                 try:
-                    os.remove("%s/energy.au" %IPI_DRIVER_TEMP)
-                    os.remove("%s/egrad.au" %IPI_DRIVER_TEMP)
-                    os.remove("%s/dipole.debye" %IPI_DRIVER_TEMP)
-                    os.remove("%s/dipder.au" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/energy.au" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/egrad.au" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/dipole.debye" %IPI_DRIVER_TEMP)
+                    #os.remove("%s/dipder.au" %IPI_DRIVER_TEMP)
+                    os.rename("%s/energy.au" %IPI_DRIVER_TEMP, "%s/energy.au.last_step" %IPI_DRIVER_TEMP)
+                    os.rename("%s/egrad.au" %IPI_DRIVER_TEMP, "%s/egrad.au.last_step" %IPI_DRIVER_TEMP)
+                    os.rename("%s/dipole.debye" %IPI_DRIVER_TEMP, "%s/dipole.debye.last_step" %IPI_DRIVER_TEMP)
+                    os.rename("%s/dipder.au" %IPI_DRIVER_TEMP, "%s/dipder.au.last_step" %IPI_DRIVER_TEMP)
                 except:
                     None
 

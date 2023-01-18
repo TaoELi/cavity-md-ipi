@@ -158,6 +158,9 @@ class photons:
                     mf[0:self.nmodes*3:3] += Ex * self.transition_photon_charge
                 elif self.add_pulse_direction == 1:
                     mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
+                elif self.add_pulse_direction == 10:
+                    mf[self.nmodes*3::3] += Ex * self.transition_photon_charge
+                    mf[self.nmodes*3+1::3] += Ex * self.transition_photon_charge
 
     def add_cw(self, mf, phase):
         if self.have_incoming_cw:

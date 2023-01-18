@@ -8,17 +8,16 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFCavPh2DSocket, FFCavPh
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFCavPhFPSocket, FFCavPh
 from ipi.interfaces.sockets import InterfaceSocket
 import ipi.engine.initializer
 from ipi.inputs.initializer import *
 from ipi.utils.inputvalue import *
 from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
-from ipi.interfaces.cavph2dsockets import InterfaceCavPh2DSocket
 
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFCavPh2DSocket", "InputFFCavPh"]
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFCavPhFPSocket", "InputFFCavPh"]
 
 
 class InputForceField(Input):
@@ -481,7 +480,7 @@ class InputFFCavPhSocket(InputForceField):
         if self.timeout.fetch() < 0.0:
             raise ValueError("Negative timeout parameter specified.")
 
-class InputFFCavPh2DSocket(InputForceField):
+class InputFFCavPhFPSocket(InputForceField):
 
     """Creates a ForceField object with a socket interface.
 
@@ -513,7 +512,61 @@ class InputFFCavPh2DSocket(InputForceField):
                                                   "help": "Determines if i-PI should quit when a client disconnects."}),
               "timeout": (InputValue, {"dtype": float,
                                        "default": 0.0,
-                                       "help": "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout."})}
+                                       "help": "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout."}),
+              "n_independent_bath": (InputValue, {"dtype": int,
+                                          "default": 1,
+                                          "help": "Number of identical independent baths to accelerate ab initio calculations"}),
+              "n_qm_atom": (InputValue, {"dtype": int,
+                                          "default": 0,
+                                          "help": "Number of atoms that are needed to be calculated by QM methods (-1 means all atoms are QM)"}),
+              "mm_charge_array": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The partial charges of the MM atoms, in the format [Q1, Q2, ... ].",
+                                 "dimension": "length"}),
+              "qm_charge_array": (InputArray, {"dtype": float,
+                               "default": input_default(factory=np.zeros, args=(0,)),
+                               "help": "The partial charges of the QM atoms, in the format [Q1, Q2, ... ]. With this definition, dipole and its derivatives will not be computed",
+                               "dimension": "length"}),
+              "charge_array": (InputArray, {"dtype": float,
+                               "default": input_default(factory=np.zeros, args=(0,)),
+                               "help": "The partial charges of all the atoms, in the format [Q1, Q2, ... ]. With this definition, QM dipole and its derivatives will not be computed",
+                               "dimension": "length"}),        
+              "apply_photon": (InputValue, {"dtype": bool,
+                                            "default": False,
+                                            "help": "Determines if additiona photonic degrees of freedom is included or not."}),  
+              "E0": (InputValue, {"dtype": float,
+                                  "default": 0.0,
+                                  "help": "The coefficient of varepsilon_tilde defined in CavMD papers in atomic units"}),         
+              "omega_c_cminv": (InputValue, {"dtype": float,
+                                  "default": 3400.0,
+                                  "help": "cavity photon frequency at perpendicular direction in cminv"}),     
+              "domega_x_cminv": (InputValue, {"dtype": float,
+                                  "default": 0.0,
+                                  "help": "cavity photon frequency spacing at x parallel direction in cminv"}),     
+              "domega_y_cminv": (InputValue, {"dtype": float,
+                                  "default": 0.0,
+                                  "help": "cavity photon frequency spacing at y parallel direction in cminv"}),      
+              "n_mode_x": (InputValue, {"dtype": int,
+                                  "default": 1,
+                                  "help": "number of k_parallel cavity modes in the x direction"}),      
+              "n_mode_y": (InputValue, {"dtype": int,
+                                  "default": 1,
+                                  "help": "number of k_parallel cavity modes in the y direction"}),  
+              "x_grid_1d": (InputArray, {"dtype": float,
+                               "default": np.array([0.25]),
+                               "help": "molecular grid along x dimension in units of Lx",
+                               "dimension": "length"}), 
+              "y_grid_1d": (InputArray, {"dtype": float,
+                               "default": np.array([0.25]),
+                               "help": "molecular grid along y dimension in units of Ly",
+                               "dimension": "length"}), 
+              "ph_constraint": (InputValue, {"dtype": str,
+                                       "default": "none",
+                                       "help": "Additional constraint added on the cavity photon environment"}),
+              "ph_rep": (InputValue, {"dtype": str,
+                                       "default": "loose",
+                                       "help": "option: loose | dense, dofferent representations of ph coordinates"}),
+            }
     attribs = {
         "mode": (InputAttribute, {"dtype": str,
                                   "options": ["unix", "inet"],
@@ -534,19 +587,19 @@ class InputFFCavPh2DSocket(InputForceField):
                                         "help": "Whether the forcefield should use a thread loop to evaluate, or work in serial. Should be set to True for FFSockets"});
 
     default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
-    default_label = "FFCavPh2DSocket"
+    default_label = "FFCavPhFPSocket"
 
     def store(self, ff):
         """Takes a ForceField instance and stores a minimal representation of it.
 
         Args:
-           ff: A ForceField object with a FFCavPh2DSocket forcemodel object.
+           ff: A ForceField object with a FFCavPhFPSocket forcemodel object.
         """
 
-        if (not type(ff) is FFCavPh2DSocket):
+        if (not type(ff) is FFCavPhFPSocket):
             raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
 
-        super(InputFFCavPh2DSocket, self).store(ff)
+        super(InputFFCavPhFPSocket, self).store(ff)
 
         self.address.store(ff.socket.address)
         self.port.store(ff.socket.port)
@@ -556,6 +609,22 @@ class InputFFCavPh2DSocket(InputForceField):
         self.matching.store(ff.socket.match_mode)
         self.exit_on_disconnect.store(ff.socket.exit_on_disconnect)
         self.threaded.store(True)  # hard-coded
+        self.n_independent_bath.store(ff.n_independent_bath)
+        self.n_qm_atom.store(ff.n_qm_atom)
+        self.mm_charge_array.store(ff.mm_charge_array)
+        self.qm_charge_array.store(ff.qm_charge_array)
+        self.charge_array.store(ff.charge_array)
+        self.apply_photon.store(ff.apply_photon) 
+        self.E0.store(ff.E0)
+        self.omega_c_cminv.store(ff.omega_c_cminv)
+        self.domega_x_cminv.store(ff.domega_x_cminv)
+        self.domega_y_cminv.store(ff.domega_y_cminv)
+        self.n_mode_x.store(ff.n_mode_x)
+        self.n_mode_y.store(ff.n_mode_y)
+        self.x_grid_1d.store(ff.x_grid_1d)
+        self.y_grid_1d.store(ff.y_grid_1d)
+        self.ph_constraint.store(ff.ph_constraint)
+        self.ph_rep.store(ff.ph_rep)
 
     def fetch(self):
         """Creates a ForceSocket object.
@@ -565,18 +634,27 @@ class InputFFCavPh2DSocket(InputForceField):
         """
 
         if self.threaded.fetch() == False:
-            raise ValueError("FFCavPh2DSockets cannot poll without threaded mode.")
+            raise ValueError("FFCavPhFPSockets cannot poll without threaded mode.")
         # just use threaded throughout
-        return FFCavPh2DSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
+        return FFCavPhFPSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
                         active=self.activelist.fetch(), threaded=self.threaded.fetch(),
-                        interface=InterfaceCavPh2DSocket(address=self.address.fetch(), port=self.port.fetch(),
+                        interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
                                                   slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch(),
-                                                  match_mode=self.matching.fetch(), exit_on_disconnect=self.exit_on_disconnect.fetch()))
+                                                  match_mode=self.matching.fetch(), exit_on_disconnect=self.exit_on_disconnect.fetch()),
+                        n_independent_bath=self.n_independent_bath.fetch(),
+                        n_qm_atom=self.n_qm_atom.fetch(),
+                        mm_charge_array=self.mm_charge_array.fetch(),
+                        qm_charge_array=self.qm_charge_array.fetch(),
+                        charge_array=self.charge_array.fetch(),
+                        apply_photon=self.apply_photon.fetch(), E0=self.E0.fetch(), omega_c_cminv=self.omega_c_cminv.fetch(), 
+                        domega_x_cminv=self.domega_x_cminv.fetch(), domega_y_cminv=self.domega_y_cminv.fetch(), 
+                        n_mode_x=self.n_mode_x.fetch(), n_mode_y=self.n_mode_y.fetch(), x_grid_1d=self.x_grid_1d.fetch(), 
+                        y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch(), ph_rep=self.ph_rep)
 
     def check(self):
         """Deals with optional parameters."""
 
-        super(InputFFCavPh2DSocket, self).check()
+        super(InputFFCavPhFPSocket, self).check()
         if self.port.fetch() < 1 or self.port.fetch() > 65535:
             raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
         elif self.port.fetch() < 1025:
@@ -600,6 +678,9 @@ class InputFFCavPh(InputForceField):
               "output_file": (InputValue, {"dtype": str,
                                             "default": 'output.dat',
                                             "help": "Output file for ab initio code"}),
+              "qchem_template": (InputValue, {"dtype": str,
+                                            "default": 'qchem_template',
+                                            "help": "Qchem template input file without molecule section"}),
               "memory_usage": (InputValue, {"dtype": str,
                                             "default": "2 Gb",
                                             "help": "Memory for ab initio calculations"}),
@@ -641,6 +722,7 @@ class InputFFCavPh(InputForceField):
         self.input_xyz_filename.store(ff.input_xyz_filename)
         self.grad_method.store(ff.grad_method)
         self.output_file.store(ff.output_file)
+        self.qchem_template.store(ff.qchem_template)
         self.memory_usage.store(ff.memory_usage)
         self.numpy_memory.store(ff.numpy_memory)
         self.nthread.store(ff.nthread)
@@ -655,6 +737,7 @@ class InputFFCavPh(InputForceField):
         return FFCavPh(input_xyz_filename=self.input_xyz_filename.fetch(),
         grad_method=self.grad_method.fetch(),
         output_file=self.output_file.fetch(),
+        qchem_template=self.qchem_template.fetch(),
         memory_usage=self.memory_usage.fetch(),
         numpy_memory=self.numpy_memory.fetch(),
         nthread=self.nthread.fetch(),

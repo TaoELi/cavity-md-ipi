@@ -649,7 +649,7 @@ class InputFFCavPhFPSocket(InputForceField):
                         apply_photon=self.apply_photon.fetch(), E0=self.E0.fetch(), omega_c_cminv=self.omega_c_cminv.fetch(), 
                         domega_x_cminv=self.domega_x_cminv.fetch(), domega_y_cminv=self.domega_y_cminv.fetch(), 
                         n_mode_x=self.n_mode_x.fetch(), n_mode_y=self.n_mode_y.fetch(), x_grid_1d=self.x_grid_1d.fetch(), 
-                        y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch(), ph_rep=self.ph_rep)
+                        y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch(), ph_rep=self.ph_rep.fetch())
 
     def check(self):
         """Deals with optional parameters."""

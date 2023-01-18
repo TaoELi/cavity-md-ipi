@@ -459,6 +459,7 @@ class Driver(DriverSocket):
             if self.dipole.update_charge:
                 self.dipole.update_charges(mcharge)
             dipole_x_tot, dipole_y_tot, dmudx, dmudy = self.dipole.calc_dipole_x_y_and_derivatives()
+            info("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, self.dipole.calc_dipoles_z_tot()), verbosity.medium)
 
             mu_int = Ex * dipole_x_tot + Ey * dipole_y_tot
             mu += mu_photon + mu_int + 0.5 * self.photons.coeff_self * (dipole_x_tot**2 + dipole_y_tot**2)
@@ -473,6 +474,10 @@ class Driver(DriverSocket):
 
             # 4. Calculate photonic force
             f_photon = self.photons.calc_photon_force(dipole_x_tot, dipole_y_tot)
+            # 4.1. Update if adding external electric fields on the photonic DoFs
+            self.photons.add_pulse(f_photon)
+            # copy the phase information from dipole
+            self.photons.add_cw(f_photon, phase=self.dipole.get_cw_phase())
 
             # 5. Merge the two forces
             mf = np.concatenate((mf[:], f_photon[:]))

@@ -836,13 +836,22 @@ class PhotonDriverFabryPerot():
         In this implementation, the photonic masses are set as 1 a.u.
 
         Args:
-            xxx
+            apply_photon: Determine whether apply light-matter interactions
+            E0: varepsilon in the paper, light-matter interactions
+            omega_c_cminv: cavity frequency in the perpendicular direction in units of cm-1
+            domega_x_cminv: cavity frequency resolution in the in-plane x direction
+            domega_y_cminv: cavity frequency resolution in the in-plane y direction
+            n_mode_x: number of photon normal modes in the in-plane x direction
+            n_mode_y: number of photon normal modes in the in-plane y direction
+            x_grid_1d: array of molecular subsystem grid positions in the x direction
+            y_grid_1d: array of molecular subsystem grid positions in the y direction
+            ph_constraint: string value of possible constraint applied to photons
+            ph_rep: loose/dense: if the photon coordinates are stored in 2Nmodes or Nmodes photon "atoms"
         """
         self.hartree_to_cminv = 219474.63
         self.apply_photon = apply_photon
         self.E0 = E0
         self.omega_c = omega_c_cminv / self.hartree_to_cminv
-        print(omega_c_cminv, self.hartree_to_cminv)
         self.domega_x = domega_x_cminv / self.hartree_to_cminv
         self.domega_y = domega_y_cminv / self.hartree_to_cminv
         self.n_mode_x = n_mode_x
@@ -859,7 +868,7 @@ class PhotonDriverFabryPerot():
             self.ph_rep = ph_rep
             self.init_fabry_perot_geometry(self.ph_constraint, self.ph_rep)
     
-    def init_fabry_perot_geometry(self, ph_constraint, ph_rep="loose"):
+    def init_fabry_perot_geometry(self, ph_constraint="none", ph_rep="loose"):
 
         """
         Initialize the 2D Fabry-Perot geometry and prepare parameters for calculations
@@ -1148,6 +1157,7 @@ class FFCavPhFPSocket(ForceField):
         self.x_grid_1d = x_grid_1d
         self.y_grid_1d = y_grid_1d
         self.ph_constraint = ph_constraint
+        self.ph_rep = ph_rep
         # define the photon environment
         self.ph = PhotonDriverFabryPerot(apply_photon=apply_photon, E0=E0, omega_c_cminv=omega_c_cminv, 
                     domega_x_cminv=domega_x_cminv, domega_y_cminv=domega_y_cminv, n_mode_x=n_mode_x, 
