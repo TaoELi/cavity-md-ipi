@@ -1,6 +1,6 @@
 *.tar.gz
 debug/
-patches/
+patches_legacy/
 legacy/
 .ipynb_checkpoints/
 cavmd_examples/CO2_laserPolariton/
