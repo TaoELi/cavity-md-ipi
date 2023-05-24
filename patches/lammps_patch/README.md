@@ -6,6 +6,8 @@ This additional requirement differentiates between (reactive) CavMD with convent
 
 ## Practical installation procedure
 
+0. A detailed guide of installing LAMMPS is provided in the tutorials of CavMD: [https://github.com/TaoELi/cavity-md-ipi/tree/master/tutorials/Rabi_splitting#installation](https://github.com/TaoELi/cavity-md-ipi/tree/master/tutorials/Rabi_splitting#installation). Please try and check if you can install the original LAMMPS sucessfully in your local machine. 
+
 1. Please copy these two files (.cpp and .h) to the LAMMPS source code, e.g., lammps-stable_3Mar2020 [https://github.com/lammps/lammps/releases/tag/stable_3Mar2020].:
 <pre><code>cp fix_cavph.cpp fix_cavph.h lammps-patch_15Jun2020/src/USER-MISC/
  </code></pre>
