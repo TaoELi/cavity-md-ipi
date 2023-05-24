@@ -1,0 +1,22 @@
+# REAX potential for CHO system
+# .....
+
+units		real
+
+atom_style	charge
+read_data	data.lmp
+
+pair_style	reax/c lmp_control
+pair_coeff	* * ffield.reax.solution H C O
+
+neighbor	2 bin
+neigh_modify	every 10 delay 0 check no
+
+fix 1 all cavphipi coupling_1e-2_mode_1000_1 32345 unix
+#fix             2 all qeq/reax 1 0.0 10.0 1e-6 param.qeq
+fix             2 all qeq/reax 1 0.0 10.0 1.0e-6 reax/c
+
+timestep	0.25
+
+
+run		1000000

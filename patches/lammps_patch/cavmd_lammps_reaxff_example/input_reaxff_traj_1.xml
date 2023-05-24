@@ -1,0 +1,38 @@
+<simulation verbosity='high'>
+  <output prefix='simu_1'>
+    <properties stride='20' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}] </properties>
+    <trajectory filename='xc' stride='20' format='xyz'> x_centroid{angstrom} </trajectory>
+    <trajectory filename='vc' stride='20' format='xyz'> v_centroid </trajectory>
+    <checkpoint filename='checkpoint' stride='20' overwrite='True'/>
+  </output>
+  <total_steps>100</total_steps>
+  <prng>
+    <seed>846295</seed>
+  </prng>
+  <ffcavphsocket name='lammps' mode='unix' pbc='False'>
+    <address>coupling_1e-2_mode_1000_1</address>
+  </ffcavphsocket>
+  <system>
+    <initialize nbeads='1'>
+      <file mode='xyz' units='angstrom'> ts_opt_incav_1e-2_mode_1000.xyz </file>
+      <cell mode='manual' units='angstrom'>
+	[242.92, 0, 0, 0, 242.92, 0, 0, 0, 242.92]
+      </cell>
+      <velocities mode='thermal' units='kelvin'> 300 </velocities>
+    </initialize>
+    <forces>
+      <force forcefield='lammps'> </force>
+    </forces>
+    <motion mode='dynamics'>
+      <dynamics mode='nvt'>
+        <timestep units='femtosecond'> 0.025 </timestep>
+        <thermostat mode='langevin'>
+          <tau units='femtosecond'> 100 </tau>
+        </thermostat>
+      </dynamics>
+    </motion>
+    <ensemble>
+      <temperature units='kelvin'> 300 </temperature>
+    </ensemble>
+  </system>
+</simulation>
