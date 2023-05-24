@@ -6,7 +6,7 @@ This additional requirement differentiates between (reactive) CavMD with convent
 
 ## Practical installation procedure
 
-1. Please copy these two files (.cpp and .h) to the LAMMPS source code, e.g., lammps-stable_3Mar2020 [https://lammps.sandia.gov/tars/lammps-3Mar20.tar.gz].:
+1. Please copy these two files (.cpp and .h) to the LAMMPS source code, e.g., lammps-stable_3Mar2020 [https://github.com/lammps/lammps/releases/tag/stable_3Mar2020].:
 <pre><code>cp fix_cavph.cpp fix_cavph.h lammps-patch_15Jun2020/src/USER-MISC/
  </code></pre>
 
