@@ -1,3 +1,4 @@
+.idea
 *.tar.gz
 debug/
 patches_legacy/
