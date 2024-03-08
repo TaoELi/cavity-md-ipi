@@ -400,6 +400,14 @@ class TrajectoryOutput(BaseOutput):
             fatom = Atoms(self.system.beads.natoms)
             fatom.names[:] = self.system.beads.names
             fatom.q[:] = data[b]
+        elif getkey(what) in ["x_centroid_ph"]:
+            # evaluate the number of cavity photons
+            names = np.array(self.system.beads.names)
+            index= np.where(names=='L')
+            n_ph = np.size(index)
+            fatom = Atoms(n_ph)
+            fatom.names[:] = ["L"] * n_ph
+            fatom.q[:] = data[-n_ph*3:]
         else:
             fatom = Atoms(self.system.beads.natoms)
             fatom.names[:] = self.system.beads.names

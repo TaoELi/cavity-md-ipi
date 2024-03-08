@@ -1093,17 +1093,7 @@ class FFCavPhFPSocket(ForceField):
     Tao E. Li @ 2023-01-15
     Check https://doi.org/10.1073/pnas.2009272117 for details
 
-    Interface between the PIMD code and a socket for a single replica.
-
     Independent bath approximation will be made to communicate with many sockets
-
-    Deals with an individual replica of the system, obtaining the potential
-    force and virial appropriate to this system. Deals with the distribution of
-    jobs to the interface.
-
-    Attributes:
-        socket: The interface object which contains the socket through which
-            communication between the forcefield and the driver is done.
     """
 
     def __init__(self, latency=1.0, name="", pars=None, dopbc=False,
@@ -1113,9 +1103,9 @@ class FFCavPhFPSocket(ForceField):
                  mm_charge_array=None,
                  qm_charge_array=None,
                  charge_array=None,
-                 apply_photon=True, E0=1e-4, omega_c_cminv=3400.0, domega_x_cminv=100.0, 
-                 domega_y_cminv=100.0, n_mode_x=4, n_mode_y=3, x_grid_1d=np.array([0.1, 0.5, 0.9]), 
-                 y_grid_1d=np.array([0.1, 0.5]), ph_constraint="none", ph_rep="loose"):
+                 apply_photon=True, E0=1e-4, omega_c_cminv=3400.0, domega_x_cminv=0.0, 
+                 domega_y_cminv=0.0, n_mode_x=1, n_mode_y=1, x_grid_1d=np.array([0.25]), 
+                 y_grid_1d=np.array([0.25]), ph_constraint="none", ph_rep="loose"):
 
         """Initialises FFCavPhFPSocket.
 

@@ -2209,6 +2209,11 @@ class Trajectories(dobject):
             "x_centroid": {"dimension": "length",
                            "help": "The centroid coordinates.",
                            'func': (lambda: 1.0 * self.system.beads.qc)},
+            # add by Tao E. Li at 2023/07/17 to create an output traj for photons only
+            "x_centroid_ph": {"dimension": "length",
+                           "help": "The centroid coordinates of cavity photons.",
+                           'func': (lambda: 1.0 * self.system.beads.qc)},
+            # end by Tao E. Li at 2023/07/17
             "v_centroid": {"dimension": "velocity",
                            "help": "The centroid velocity.",
                            'func': (lambda: self.system.beads.pc / self.system.beads.m3[0])},
