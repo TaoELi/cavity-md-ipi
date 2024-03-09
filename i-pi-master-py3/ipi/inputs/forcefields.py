@@ -515,17 +515,17 @@ class InputFFCavPhFPSocket(InputForceField):
                                        "help": "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout."}),
               "n_independent_bath": (InputValue, {"dtype": int,
                                           "default": 1,
-                                          "help": "Number of identical independent baths to accelerate ab initio calculations"}),
+                                          "help": "Number of identical independent copies of molecule ensembles."}),
               "n_qm_atom": (InputValue, {"dtype": int,
                                           "default": 0,
-                                          "help": "Number of atoms that are needed to be calculated by QM methods (-1 means all atoms are QM)"}),
+                                          "help": "Number of atoms that are needed to be calculated by QM methods in each bath (-1 means all atoms are QM)"}),
               "mm_charge_array": (InputArray, {"dtype": float,
                                  "default": input_default(factory=np.zeros, args=(0,)),
-                                 "help": "The partial charges of the MM atoms, in the format [Q1, Q2, ... ].",
+                                 "help": "The partial charges of the MM atoms in each bath, in the format [Q1, Q2, ... ].",
                                  "dimension": "length"}),
               "qm_charge_array": (InputArray, {"dtype": float,
                                "default": input_default(factory=np.zeros, args=(0,)),
-                               "help": "The partial charges of the QM atoms, in the format [Q1, Q2, ... ]. With this definition, dipole and its derivatives will not be computed",
+                               "help": "The partial charges of the QM atoms in each bath, in the format [Q1, Q2, ... ]. With this definition, dipole and its derivatives will not be computed",
                                "dimension": "length"}),
               "charge_array": (InputArray, {"dtype": float,
                                "default": input_default(factory=np.zeros, args=(0,)),
@@ -536,36 +536,60 @@ class InputFFCavPhFPSocket(InputForceField):
                                             "help": "Determines if additiona photonic degrees of freedom is included or not."}),  
               "E0": (InputValue, {"dtype": float,
                                   "default": 0.0,
-                                  "help": "The coefficient of varepsilon_tilde defined in CavMD papers in atomic units"}),         
-              "omega_c_cminv": (InputValue, {"dtype": float,
-                                  "default": 3400.0,
-                                  "help": "cavity photon frequency at perpendicular direction in cminv"}),     
-              "domega_x_cminv": (InputValue, {"dtype": float,
-                                  "default": 0.0,
-                                  "help": "cavity photon frequency spacing at x parallel direction in cminv"}),     
-              "domega_y_cminv": (InputValue, {"dtype": float,
-                                  "default": 0.0,
-                                  "help": "cavity photon frequency spacing at y parallel direction in cminv"}),      
+                                  "help": "The value of varepsilon (effective light-matter coupling strength) in atomic units."}),
+              "omega_c": (
+                  InputValue,
+                  {
+                      "dtype": float,
+                      "default": 0.01,
+                      "help": "This gives the cavity photon frequency at normal incidence.",
+                      "dimension": "frequency",
+                  },
+              ),
+              "domega_x": (
+                  InputValue,
+                  {
+                      "dtype": float,
+                      "default": 0.0,
+                      "help": "Cavity photon frequency spacing along the x in-plane direction.",
+                      "dimension": "frequency",
+                  },
+              ),
+              "domega_y": (
+                  InputValue,
+                  {
+                      "dtype": float,
+                      "default": 0.0,
+                      "help": "Cavity photon frequency spacing along the y in-plane direction.",
+                      "dimension": "frequency",
+                  },
+              ),
               "n_mode_x": (InputValue, {"dtype": int,
                                   "default": 1,
-                                  "help": "number of k_parallel cavity modes in the x direction"}),      
+                                  "help": "Number of k_parallel cavity modes in the x direction"}),
               "n_mode_y": (InputValue, {"dtype": int,
                                   "default": 1,
-                                  "help": "number of k_parallel cavity modes in the y direction"}),  
+                                  "help": "Number of k_parallel cavity modes in the y direction"}),
               "x_grid_1d": (InputArray, {"dtype": float,
                                "default": np.array([0.25]),
-                               "help": "molecular grid along x dimension in units of Lx",
+                               "help": "Molecular grid along x dimension in units of Lx",
                                "dimension": "length"}), 
               "y_grid_1d": (InputArray, {"dtype": float,
                                "default": np.array([0.25]),
-                               "help": "molecular grid along y dimension in units of Ly",
+                               "help": "Molecular grid along y dimension in units of Ly",
                                "dimension": "length"}), 
               "ph_constraint": (InputValue, {"dtype": str,
                                        "default": "none",
                                        "help": "Additional constraint added on the cavity photon environment"}),
               "ph_rep": (InputValue, {"dtype": str,
                                        "default": "loose",
-                                       "help": "option: loose | dense, dofferent representations of ph coordinates"}),
+                                       "help": "option: loose | dense, dofferent representations of ph coordinates",
+                         "help": """In the current implementation, two energy-degenerate photon modes polarized along x and y directions
+                                                        are coupled to the molecular system. If 'loose', the cavity photons polarized along the x, y directions are represented by two 'L' atoms; 
+                                                        the x dimension of the first 'L' atom is coupled to the molecules, and the y dimension of the second 'L' atom is coupled to the molecules.
+                                                        If 'dense', the cavity photons polarized along the x, y directions are represented by one 'L' atom; 
+                                                        the x and y dimensions of this 'L' atom are coupled to the molecules.""",},
+                         ),
             }
     attribs = {
         "mode": (InputAttribute, {"dtype": str,
@@ -586,7 +610,10 @@ class InputFFCavPhFPSocket(InputForceField):
                                         "default": True,
                                         "help": "Whether the forcefield should use a thread loop to evaluate, or work in serial. Should be set to True for FFSockets"});
 
-    default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
+    default_help = """A cavity molecular dynamics driver for vibraitonal strong coupling. 
+                      In the current implementation, multiple cavity modes are coupled to the molecules.
+                      Check https://doi.org/10.1073/pnas.2009272117 and also examples/lammps/h2o-cavmd/ for details.
+                   """
     default_label = "FFCavPhFPSocket"
 
     def store(self, ff):
@@ -616,9 +643,9 @@ class InputFFCavPhFPSocket(InputForceField):
         self.charge_array.store(ff.charge_array)
         self.apply_photon.store(ff.apply_photon) 
         self.E0.store(ff.E0)
-        self.omega_c_cminv.store(ff.omega_c_cminv)
-        self.domega_x_cminv.store(ff.domega_x_cminv)
-        self.domega_y_cminv.store(ff.domega_y_cminv)
+        self.omega_c.store(ff.omega_c)
+        self.domega_x.store(ff.domega_x)
+        self.domega_y.store(ff.domega_y)
         self.n_mode_x.store(ff.n_mode_x)
         self.n_mode_y.store(ff.n_mode_y)
         self.x_grid_1d.store(ff.x_grid_1d)
@@ -646,8 +673,10 @@ class InputFFCavPhFPSocket(InputForceField):
                         mm_charge_array=self.mm_charge_array.fetch(),
                         qm_charge_array=self.qm_charge_array.fetch(),
                         charge_array=self.charge_array.fetch(),
-                        apply_photon=self.apply_photon.fetch(), E0=self.E0.fetch(), omega_c_cminv=self.omega_c_cminv.fetch(), 
-                        domega_x_cminv=self.domega_x_cminv.fetch(), domega_y_cminv=self.domega_y_cminv.fetch(), 
+                        apply_photon=self.apply_photon.fetch(), E0=self.E0.fetch(),
+                        omega_c=self.omega_c.fetch(),
+                        domega_x=self.domega_x.fetch(),
+                        domega_y=self.domega_y.fetch(),
                         n_mode_x=self.n_mode_x.fetch(), n_mode_y=self.n_mode_y.fetch(), x_grid_1d=self.x_grid_1d.fetch(), 
                         y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch(), ph_rep=self.ph_rep.fetch())
 
