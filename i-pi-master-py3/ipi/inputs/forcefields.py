@@ -8,7 +8,7 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFCavPhFPSocket, FFCavPh
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFGenCavSocket, FFCavPh
 from ipi.interfaces.sockets import InterfaceSocket
 import ipi.engine.initializer
 from ipi.inputs.initializer import *
@@ -17,7 +17,7 @@ from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
 
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFCavPhFPSocket", "InputFFCavPh"]
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFGenCavSocket", "InputFFCavPh"]
 
 
 class InputForceField(Input):
@@ -480,7 +480,7 @@ class InputFFCavPhSocket(InputForceField):
         if self.timeout.fetch() < 0.0:
             raise ValueError("Negative timeout parameter specified.")
 
-class InputFFCavPhFPSocket(InputForceField):
+class InputFFGenCavSocket(InputForceField):
 
     """Creates a ForceField object with a socket interface.
 
@@ -614,19 +614,19 @@ class InputFFCavPhFPSocket(InputForceField):
                       In the current implementation, multiple cavity modes are coupled to the molecules.
                       Check https://doi.org/10.1073/pnas.2009272117 and also examples/lammps/h2o-cavmd/ for details.
                    """
-    default_label = "FFCavPhFPSocket"
+    default_label = "FFGenCavSocket"
 
     def store(self, ff):
         """Takes a ForceField instance and stores a minimal representation of it.
 
         Args:
-           ff: A ForceField object with a FFCavPhFPSocket forcemodel object.
+           ff: A ForceField object with a FFGenCavSocket forcemodel object.
         """
 
-        if (not type(ff) is FFCavPhFPSocket):
+        if (not type(ff) is FFGenCavSocket):
             raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
 
-        super(InputFFCavPhFPSocket, self).store(ff)
+        super(InputFFGenCavSocket, self).store(ff)
 
         self.address.store(ff.socket.address)
         self.port.store(ff.socket.port)
@@ -661,9 +661,9 @@ class InputFFCavPhFPSocket(InputForceField):
         """
 
         if self.threaded.fetch() == False:
-            raise ValueError("FFCavPhFPSockets cannot poll without threaded mode.")
+            raise ValueError("FFGenCavSockets cannot poll without threaded mode.")
         # just use threaded throughout
-        return FFCavPhFPSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
+        return FFGenCavSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
                         active=self.activelist.fetch(), threaded=self.threaded.fetch(),
                         interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
                                                   slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch(),
@@ -683,7 +683,7 @@ class InputFFCavPhFPSocket(InputForceField):
     def check(self):
         """Deals with optional parameters."""
 
-        super(InputFFCavPhFPSocket, self).check()
+        super(InputFFGenCavSocket, self).check()
         if self.port.fetch() < 1 or self.port.fetch() > 65535:
             raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
         elif self.port.fetch() < 1025:

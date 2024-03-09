@@ -1084,7 +1084,7 @@ class PhotonDriverFabryPerot():
         return fx, fy
 
 
-class FFCavPhFPSocket(ForceField):
+class FFGenCavSocket(ForceField):
 
     """
     Socket for dealing with cavity photons interacting with molecules by
@@ -1113,7 +1113,7 @@ class FFCavPhFPSocket(ForceField):
                  ph_constraint="none",
                  ph_rep="loose"):
 
-        """Initialises FFCavPhFPSocket.
+        """Initialises FFGenCavSocket.
 
         Args:
            latency: The number of seconds the socket will wait before updating
@@ -1128,7 +1128,7 @@ class FFCavPhFPSocket(ForceField):
         """
 
         # a socket to the communication library is created or linked
-        super(FFCavPhFPSocket, self).__init__(latency, name, pars, dopbc, active, threaded)
+        super(FFGenCavSocket, self).__init__(latency, name, pars, dopbc, active, threaded)
         if interface is None:
             self.socket = InterfaceSocket()
         else:
@@ -1377,12 +1377,12 @@ class FFCavPhFPSocket(ForceField):
         """Spawns a new thread."""
 
         self.socket.open()
-        super(FFCavPhFPSocket, self).start()
+        super(FFGenCavSocket, self).start()
 
     def stop(self):
         """Closes the socket and the thread."""
 
-        super(FFCavPhFPSocket, self).stop()
+        super(FFGenCavSocket, self).stop()
         if self._thread is not None:
             # must wait until loop has ended before closing the socket
             self._thread.join()

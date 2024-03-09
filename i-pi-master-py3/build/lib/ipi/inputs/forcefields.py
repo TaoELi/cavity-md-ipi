@@ -8,7 +8,7 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFCavPhFPSocket, FFCavPh
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed, FFYaff, FFsGDML, FFCavPhSocket, FFGenCavSocket, FFCavPh
 from ipi.interfaces.sockets import InterfaceSocket
 import ipi.engine.initializer
 from ipi.inputs.initializer import *
@@ -17,7 +17,7 @@ from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
 
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFCavPhFPSocket", "InputFFCavPh"]
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed', 'InputFFYaff', 'InputFFsGDML', "InputFFCavPhSocket", "InputFFGenCavSocket", "InputFFCavPh"]
 
 
 class InputForceField(Input):
