@@ -20,7 +20,7 @@ from ipi.utils.messages import verbosity, warning, info
 from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
 # Start Tao E. Li's modification 2021/04/22
-from ipi.interfaces.photons import photons
+# from ipi.interfaces.photons import photons
 # End Tao E. Li's modification
 import json
 import os
@@ -1198,8 +1198,14 @@ class ThermoCavLossLangevin(Thermostat):
                                dependencies=[dself.temp, dself.T])
 
         # invoke the definition of photons
-        self.photons = photons()
-        self.apply_photon = self.photons.apply_photon
+        #self.photons = photons()
+        #self.apply_photon = self.photons.apply_photon
+
+    def get_nphoton(self):
+        """Get number of cavity photon modes using the mass of the cavity photon modes == 1.0 a.u."""
+        sm = dstrip(self.sm)
+        nphoton = int(np.size(sm[sm == 1.0]) // 3.0)
+        return nphoton
 
     def step(self):
         """Updates the bound momentum vector with a langevin thermostat."""
@@ -1219,9 +1225,10 @@ class ThermoCavLossLangevin(Thermostat):
 
         # Here, we only update the momentum for degree's of cavity photons to
         # represent the effect of cavity loss
-        if self.apply_photon:
+        nphoton = self.get_nphoton()
+        if nphoton > 0:
             #print("adding langevin thermostat at only photon DoFs")
-            self.p[-3*self.photons.nphoton:] = p[-3*self.photons.nphoton:]
+            self.p[-3*nphoton:] = p[-3*nphoton:]
             # self.p = p
         self.ethermo = et
 
@@ -1281,10 +1288,17 @@ class ThermoCavLossMultiLangevin(Thermostat):
                                dependencies=[dself.temp, dself.T])
 
         # invoke the definition of photons
-        self.photons = photons()
-        self.apply_photon = self.photons.apply_photon
-        if not self.apply_photon:
-            raise ValueError("Using cavloss_multilangevin needs cavity photons !!!")
+        #self.photons = photons()
+        #self.apply_photon = self.photons.apply_photon
+        #if not self.apply_photon:
+        #    raise ValueError("Using cavloss_multilangevin needs cavity photons !!!")
+
+
+    def get_nphoton(self):
+        """Get number of cavity photon modes using the mass of the cavity photon modes == 1.0 a.u."""
+        sm = dstrip(self.sm)
+        nphoton = int(np.size(sm[sm == 1.0]) // 3.0)
+        return nphoton
 
     def step(self):
         """Updates the bound momentum vector with a multilangevin thermostat."""
@@ -1294,10 +1308,11 @@ class ThermoCavLossMultiLangevin(Thermostat):
         sm = dstrip(self.sm)
 
         # let's operate them separately
-        p_m = p[0:-3*self.photons.nphoton].copy()
-        p_l = p[-3*self.photons.nphoton:].copy()
-        sm_m = sm[0:-3*self.photons.nphoton]
-        sm_l = sm[-3*self.photons.nphoton:]
+        nphoton = self.get_nphoton()
+        p_m = p[0:-3*nphoton].copy()
+        p_l = p[-3*nphoton:].copy()
+        sm_m = sm[0:-3*nphoton]
+        sm_l = sm[-3*nphoton:]
 
         # for the matter side
         p_m /= sm_m
