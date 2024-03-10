@@ -19,9 +19,11 @@ from ipi.utils.prng import Random
 from ipi.utils.messages import verbosity, warning, info
 from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
+
 # Start Tao E. Li's modification 2021/04/22
 # from ipi.interfaces.photons import photons
 # End Tao E. Li's modification
+
 import json
 import os
 
