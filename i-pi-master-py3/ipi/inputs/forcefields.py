@@ -14,6 +14,7 @@ import ipi.engine.initializer
 from ipi.inputs.initializer import *
 from ipi.utils.inputvalue import *
 from ipi.interfaces.cavphsockets import InterfaceCavPhSocket
+from ipi.utils.messages import verbosity, warning
 
 
 
@@ -131,7 +132,7 @@ class InputFFSocket(InputForceField):
                                   "default": "inet",
                                   "help": "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]."}),
                 "matching": (InputAttribute, {"dtype": str,
-                                              "options": ["auto", "any"],
+                                              "options": ["auto", "any", "lock"],
                                               "default": "auto",
                                               "help": "Specifies whether requests should be dispatched to any client, or automatically matched to the same client when possible [auto]."})
     }
@@ -178,6 +179,12 @@ class InputFFSocket(InputForceField):
         if self.threaded.fetch() == False:
             raise ValueError("FFSockets cannot poll without threaded mode.")
         # just use threaded throughout
+
+        # if using forced match mode, ensure softexit called upon disconnection of a client
+        if self.matching.fetch() == "lock":
+            warning('when using matching="lock" pay attention to the possibility of superfluous driviers idling if there are more clients codes connected than there are relicas.',
+                    verbosity.low)
+            self.exit_on_disconnect.store(True)
         return FFSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
                         active=self.activelist.fetch(), threaded=self.threaded.fetch(),
                         interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
@@ -583,13 +590,24 @@ class InputFFGenCavSocket(InputForceField):
                                        "help": "Additional constraint added on the cavity photon environment"}),
               "ph_rep": (InputValue, {"dtype": str,
                                        "default": "loose",
-                                       "help": "option: loose | dense, dofferent representations of ph coordinates",
+                                       "help": "option: loose | dense, different representations of ph coordinates",
                          "help": """In the current implementation, two energy-degenerate photon modes polarized along x and y directions
                                                         are coupled to the molecular system. If 'loose', the cavity photons polarized along the x, y directions are represented by two 'L' atoms; 
                                                         the x dimension of the first 'L' atom is coupled to the molecules, and the y dimension of the second 'L' atom is coupled to the molecules.
                                                         If 'dense', the cavity photons polarized along the x, y directions are represented by one 'L' atom; 
                                                         the x and y dimensions of this 'L' atom are coupled to the molecules.""",},
                          ),
+              "simu_method": (InputValue, {"dtype": str,
+                                       "default": "mm",
+                                       "help": "option: mm / rt-ehrenfest, method to propagate the interaction between the cavity modes and molecular systems."}),
+              "excite_ph_cw":  (InputArray, {"dtype": float,
+                               "default": np.array([-1, 0.0, 0.0, 2320.0, 0.5, 0.0, 0.0]),
+                               "help": "A brute-force implementation of exciting a particular cavity photon mode [idx_of_mode(from 0), Qc (units of a.u.), E0, omega (units of cm-1), dt (units of fs, should be the same as the dt in time step), tstart (units of fs), tend (units of fs)]",
+                               "dimension": "length"}),
+              "excite_ph_gaussian": (InputArray, {"dtype": float,
+                                "default": np.array([-1, 0.0, 0.0, 2320.0, 0.0, 100.0, 0.5, 0.0, 0.0]),
+                                "help": "A brute-force implementation of exciting a particular cavity photon mode [idx_of_mode(from 0), Qc (units of a.u.), E0, omega (units of cm-1), t0, tau, dt (units of fs, should be the same as the dt in time step)]",
+                                "dimension": "length"}),
             }
     attribs = {
         "mode": (InputAttribute, {"dtype": str,
@@ -597,7 +615,7 @@ class InputFFGenCavSocket(InputForceField):
                                   "default": "inet",
                                   "help": "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]."}),
                 "matching": (InputAttribute, {"dtype": str,
-                                              "options": ["auto", "any"],
+                                              "options": ["auto", "any", "lock"],
                                               "default": "auto",
                                               "help": "Specifies whether requests should be dispatched to any client, or automatically matched to the same client when possible [auto]."})
     }
@@ -652,6 +670,8 @@ class InputFFGenCavSocket(InputForceField):
         self.y_grid_1d.store(ff.y_grid_1d)
         self.ph_constraint.store(ff.ph_constraint)
         self.ph_rep.store(ff.ph_rep)
+        self.simu_method.store(ff.simu_method)
+        self.excite_ph_cw.store(ff.excite_ph_cw)
 
     def fetch(self):
         """Creates a ForceSocket object.
@@ -663,6 +683,14 @@ class InputFFGenCavSocket(InputForceField):
         if self.threaded.fetch() == False:
             raise ValueError("FFGenCavSockets cannot poll without threaded mode.")
         # just use threaded throughout
+
+        # if using forced match mode, ensure softexit called upon disconnection of a client
+        if self.matching.fetch() == "lock":
+            warning(
+                'when using matching="lock" pay attention to the possibility of superfluous driviers idling if there are more clients codes connected than there are relicas.',
+                verbosity.low)
+            self.exit_on_disconnect.store(True)
+
         return FFGenCavSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
                         active=self.activelist.fetch(), threaded=self.threaded.fetch(),
                         interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
@@ -678,7 +706,8 @@ class InputFFGenCavSocket(InputForceField):
                         domega_x=self.domega_x.fetch(),
                         domega_y=self.domega_y.fetch(),
                         n_mode_x=self.n_mode_x.fetch(), n_mode_y=self.n_mode_y.fetch(), x_grid_1d=self.x_grid_1d.fetch(), 
-                        y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch(), ph_rep=self.ph_rep.fetch())
+                        y_grid_1d=self.y_grid_1d.fetch(), ph_constraint=self.ph_constraint.fetch(), ph_rep=self.ph_rep.fetch(),
+                        simu_method=self.simu_method.fetch(), excite_ph_cw=self.excite_ph_cw.fetch())
 
     def check(self):
         """Deals with optional parameters."""

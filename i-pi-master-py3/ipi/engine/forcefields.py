@@ -11,6 +11,7 @@ layer for a driver that gets positions and returns forces (and energy).
 
 import time
 import threading
+import sys
 
 import numpy as np
 
@@ -882,6 +883,9 @@ class PhotonDriverFabryPerot():
             self.ph_rep = ph_rep
             self.init_photon()
 
+        # assign t current
+        self.t_current = 0.0
+
     def init_photon(self):
         """
         Initialize the 2D Fabry-Perot geometry and prepare parameters for calculations
@@ -1049,7 +1053,53 @@ class PhotonDriverFabryPerot():
             f_ph[1::3] -= self.varepsilon_k * d_dot_f_y
         return f_ph
 
-    def get_nuc_cav_forces(self, dx_array, dy_array, charge_array_bath):
+    def get_ph_driving_cw_forces(self, idx_ph=0, charge_au=0.0, amp_au=0.0, omega_drv_cminv=2320.0, dt_fs=0.5, tstart_fs=0.0, tend_fs=0.0):
+        """
+        This is a very bad implementation of adding the external driving to the photon mode (but we will do it for now)
+        """
+        pulse_on_sign = float(tstart_fs <= self.t_current / 41.341374575751 <= tend_fs)
+        f_cw_single = - charge_au * amp_au * np.sin(omega_drv_cminv / 219474.63 * self.t_current) * pulse_on_sign  # convert cm-1 to a.u.
+        f_cw = 0.0 * self.pos_ph
+        idx = int(idx_ph) * 3
+
+        if self.ph_rep == "loose":
+            f_cw[idx] += f_cw_single
+            f_cw[self.n_mode * 3 + idx + 1] += f_cw_single
+        elif self.ph_rep == "dense":
+            f_cw[idx] += f_cw_single
+            f_cw[idx+1] += f_cw_single
+        self.t_current += dt_fs * 41.341374575751  # convert fs to au
+
+        # print the output for debugging
+        #print("excite the ", int(idx_ph), "-th photon mode with charge_au =", charge_au, "omega_drv_cminv =",
+        #      omega_drv_cminv, "and dt_fs =", dt_fs)
+        #print("the force is", f_cw_single)
+        #print("the force array is", f_cw)
+        #print("current time is [in fs]", self.t_current / 41.341374575751)
+
+        return f_cw
+
+    def get_ph_driving_gaussian_forces(self, idx_ph=0, charge_au=0.0, amp_au=0.0, omega_drv_cminv=2320.0, t0_fs=0.0, tau_fs=100.0, dt_fs=0.5, tstart_fs=0.0, tend_fs=0.0):
+        """
+        This is a very bad implementation of adding the external driving to the photon mode (but we will do it for now)
+        """
+        pulse_on_sign = float(tstart_fs <= self.t_current / 41.341374575751 <= tend_fs)
+        f_gaussian_single = - charge_au * amp_au * np.exp(-((self.t_current / 41.341374575751 - t0_fs)/tau_fs)**2) * np.sin(omega_drv_cminv / 219474.63 * self.t_current) * pulse_on_sign  # convert cm-1 to a.u.
+        f_gaussian = 0.0 * self.pos_ph
+        idx = int(idx_ph) * 3
+
+        if self.ph_rep == "loose":
+            f_gaussian[idx] += f_gaussian_single
+            f_gaussian[self.n_mode * 3 + idx + 1] += f_gaussian_single
+        elif self.ph_rep == "dense":
+            f_gaussian[idx] += f_gaussian_single
+            f_gaussian[idx+1] += f_gaussian_single
+        self.t_current += dt_fs * 41.341374575751  # convert fs to au
+
+        return f_gaussian
+
+
+    def get_nuc_cav_forces(self, dx_array, dy_array, charge_array_bath=None, dipdrv_dict=None, method="mm"):
         """
         Calculate the photonic forces on nuclei from MM partial charges
 
@@ -1077,11 +1127,52 @@ class PhotonDriverFabryPerot():
         Eky += self.varepsilon_k**2 / self.omega_k**2 * d_dot_f_y
 
         # dimension of independent baths (xy grid points)
-        coeff_x = np.dot(np.transpose(Ekx), self.ftilde_kx)
-        coeff_y = np.dot(np.transpose(Eky), self.ftilde_ky)
-        fx = -np.kron(coeff_x, charge_array_bath)
-        fy = -np.kron(coeff_y, charge_array_bath)
-        return fx, fy
+        efield_x = np.dot(np.transpose(Ekx), self.ftilde_kx)
+        efield_y = np.dot(np.transpose(Eky), self.ftilde_ky)
+
+        # calculate it in a MM way (with fixed nuclear partial charges)
+        if method == "mm":
+            fx = -np.kron(efield_x, charge_array_bath)
+            fy = -np.kron(efield_y, charge_array_bath)
+            fz = np.zeros(np.size(fx))
+        else:
+            # we will utilize the dipdrv_dict to calculate the nuclear forces
+            # we assume that in dipdrv, we store dx derivatives, dy derivatives, and dz derivatives separately
+            n_dim = int(np.size(dipdrv_dict[0]) // 3)
+            f_global = np.zeros(n_dim * self.n_grid)
+            #print("n_dim = ", n_dim)
+            for idx in range(self.n_grid):
+                dxdrv_local = dipdrv_dict[idx][:n_dim]
+                dydrv_local = dipdrv_dict[idx][n_dim:n_dim*2]
+                f_local = -efield_x[idx] * dxdrv_local - efield_y[idx] * dydrv_local
+                f_global[idx*n_dim:(idx+1)*n_dim] = f_local
+            fx, fy, fz = f_global[0::3], f_global[1::3], f_global[2::3]
+
+        return fx, fy, fz
+
+    def get_electric_field_vector_distribution(self, ncount, dx_array, dy_array):
+
+        # calculate the dot products between mode functions and dipole array
+        d_dot_f_x = np.dot(self.ftilde_kx, dx_array)
+        d_dot_f_y = np.dot(self.ftilde_ky, dy_array)
+
+        # cavity force on x direction
+        if self.ph_rep == "loose":
+            Ekx = self.varepsilon_k * self.pos_ph[: self.n_mode * 3: 3]
+            Eky = self.varepsilon_k * self.pos_ph[self.n_mode * 3 + 1:: 3]
+        elif self.ph_rep == "dense":
+            Ekx = self.varepsilon_k * self.pos_ph[::3]
+            Eky = self.varepsilon_k * self.pos_ph[1::3]
+        Ekx += self.varepsilon_k ** 2 / self.omega_k ** 2 * d_dot_f_x
+        Eky += self.varepsilon_k ** 2 / self.omega_k ** 2 * d_dot_f_y
+
+        # dimension of independent baths (xy grid points)
+        efield_x = np.dot(np.transpose(Ekx), self.ftilde_kx)
+        efield_y = np.dot(np.transpose(Eky), self.ftilde_ky)
+        efield_zero = np.zeros(self.n_grid)
+
+        return efield_x, efield_y, efield_zero
+
 
 
 class FFGenCavSocket(ForceField):
@@ -1111,7 +1202,10 @@ class FFGenCavSocket(ForceField):
                  x_grid_1d=np.array([0.25]),
                  y_grid_1d=np.array([0.25]),
                  ph_constraint="none",
-                 ph_rep="loose"):
+                 ph_rep="loose",
+                 simu_method="mm",
+                 excite_ph_cw=np.array([-1, 0.0, 0.0, 2320.0, 0.5, 0.0, 0.0]),
+                 excite_ph_gaussian=np.array([-1, 0.0, 0.0, 2320.0, 0.0, 100.0, 0.5, 0.0, 0.0])):
 
         """Initialises FFGenCavSocket.
 
@@ -1154,6 +1248,9 @@ class FFGenCavSocket(ForceField):
         self.y_grid_1d = y_grid_1d
         self.ph_constraint = ph_constraint
         self.ph_rep = ph_rep
+        self.simu_method = simu_method
+        self.excite_ph_cw = excite_ph_cw
+        self.excite_ph_gaussian = excite_ph_gaussian
         # define the photon environment
         self.ph = PhotonDriverFabryPerot(apply_photon=apply_photon, E0=E0, omega_c=omega_c,
                     domega_x=domega_x, domega_y=domega_y, n_mode_x=n_mode_x,
@@ -1161,6 +1258,15 @@ class FFGenCavSocket(ForceField):
                     ph_rep=ph_rep)
 
         self._getallcount = 0
+
+        # store molecular dipole moments at each grid point (initialize them as zero)
+        self.dx_array = np.zeros(self.ph.n_grid)
+        self.dy_array = np.zeros(self.ph.n_grid)
+        self.dz_array = np.zeros(self.ph.n_grid)
+        self.dx_array_previous = np.zeros(self.ph.n_grid)
+        self.dy_array_previous = np.zeros(self.ph.n_grid)
+        self.dz_array_previous = np.zeros(self.ph.n_grid)
+        self._ncount_queue = 0
 
     def calc_dipole_xyz_mm(self, pos, n_bath, charge_array_bath):
 
@@ -1191,6 +1297,22 @@ class FFGenCavSocket(ForceField):
         dy_array = np.array(dy_array)
         dz_array = np.array(dz_array)
         return dx_array, dy_array, dz_array
+
+    def get_dipole_and_derivatives_from_str(self, result_dict, n_bath):
+        # first we convert string of float to np array
+        dx_array = np.zeros(n_bath)
+        dy_array = np.zeros(n_bath)
+        dz_array = np.zeros(n_bath)
+        dipdrv_dict = {}
+        for idx in range(n_bath):
+            dip_and_drv = np.fromstring(result_dict[idx], dtype=float, sep=" ")
+            #print("dip_and_drv in get_dipole_and_derivatives_from_str is", dip_and_drv)
+            #print("size is", np.size(dip_and_drv))
+            dip, dipdrv = dip_and_drv[0:3], dip_and_drv[3:]
+            dipdrv_dict[idx] = dipdrv
+            # assign the dipole value in each grid point to the dx_array, dy_array, dz_array
+            dx_array[idx], dy_array[idx], dz_array[idx] = dip
+        return dx_array, dy_array, dz_array, dipdrv_dict
 
     def queue(self, atoms, cell, reqid=-1):
         """Adds a request.
@@ -1250,6 +1372,14 @@ class FFGenCavSocket(ForceField):
         pbcpos_atoms, pbcpos_phs = self.ph.split_atom_ph_coord(pbcpos)
         ndim_tot = np.size(pbcpos_atoms)
         ndim_local = int(ndim_tot // self.n_independent_bath)
+        if self.simu_method == "rt-ehrenfest":
+            # the dipole vector at this point was -dt dipole vector, so we need to get the time t dipole with brute force
+            efieldx, efieldy, efieldz = self.ph.get_electric_field_vector_distribution(self._ncount_queue, 2.0*self.dx_array-self.dx_array_previous, 2.0*self.dy_array-self.dy_array_previous)
+            #efieldx, efieldy, efieldz = self.ph.get_electric_field_vector_distribution(self._ncount_queue, self.dx_array, self.dy_array)
+            #print("##### calculating electric field vector in all grid points")
+            #print("efieldx:", efieldx)
+            #print("efieldy:", efieldy)
+            #print("efieldz:", efieldz)
 
         # 2. for atomic coordinates, we now evaluate their atomic forces
         for idx in range(self.n_independent_bath):
@@ -1258,6 +1388,18 @@ class FFGenCavSocket(ForceField):
             # Let's try to do PBC for the small regions
             if self.dopbc:
                 cell.array_pbc(pbcpos_local)
+            # if do RT-Ehrenfest simulations, the electronic subsystem needs to feel the photons
+            if self.simu_method == "rt-ehrenfest":
+                ex_local, ey_local, ez_local = efieldx[idx], efieldy[idx], efieldz[idx]
+                e_local = np.array([ex_local, ey_local, ez_local])
+                # append the local efield to the pos array so the Q-Chem code can get it
+                #print("### Appending electric field distribution at grid point", idx, "at the end of the pos array")
+                #print("elocal = ", e_local)
+                pbcpos_local = np.concatenate((pbcpos_local, e_local))
+                # also update iactive_local because we want to add electric field vector as the "active"
+                iactive_local = np.concatenate((iactive_local, np.array([iactive_local[-1]+1, iactive_local[-1]+2, iactive_local[-1]+3])))
+            #print("After appending, the new pos array is", pbcpos_local)
+            #print("iactive_local is", iactive_local)
             newreq_local = ForceRequest({
                 "id": int(reqid*self.n_independent_bath) + idx,
                 "pos": pbcpos_local,
@@ -1282,7 +1424,6 @@ class FFGenCavSocket(ForceField):
             self.poll()
 
         # sleeps until all the new requests have been evaluated
-        import sys
         for self.request in newreq_lst:
             while self.request["status"] != "Done":
                 if self.request["status"] == "Exit" or softexit.triggered:
@@ -1314,29 +1455,56 @@ class FFGenCavSocket(ForceField):
         # ...atomic forces have been calculated at this point
         
         # 3. At this moment, we combine the small requests to a big mega request (update results)
-        result_tot = [0.0, np.zeros(len(pbcpos), float), np.zeros((3, 3), float), ""]
+        result_tot = [0.0, np.zeros(len(pbcpos), float), np.zeros((3, 3), float), {}]
         for idx, newreq in enumerate(newreq_lst):
             u, f, vir, extra =  newreq["result"]
             result_tot[0] += u
-            result_tot[1][ndim_local*idx:ndim_local*(idx+1)] = f
+            result_tot[1][ndim_local*idx:ndim_local*(idx+1)] = f[:ndim_local]
+            #print("f after ndim_local is,", f[ndim_local:])
             result_tot[2] += vir
-            result_tot[3] += extra
+            result_tot[3][idx] = extra
+            #print("######### gathering extra info from the driver")
+            #print("driver idx = ", idx, "extra string is")
+            #print(extra)
+
+        #print("The overall extra string is")
+        #print(result_tot[3])
 
 
         if self.ph.apply_photon:
             # 4. calculate total dipole moment array for N baths
-            dx_array, dy_array, dz_array = self.calc_dipole_xyz_mm(pos=pbcpos_atoms, n_bath=self.n_independent_bath, charge_array_bath=self.charge_array)
+            if self.simu_method == "rt-ehrenfest":
+                dx_array, dy_array, dz_array, dipdrv_dict = self.get_dipole_and_derivatives_from_str(result_tot[3], self.n_independent_bath)
+            else:
+                # by default, we will try to calculate the dipole moments in each grid point using predefined MM charges (the simplest way)
+                dx_array, dy_array, dz_array = self.calc_dipole_xyz_mm(pos=pbcpos_atoms, n_bath=self.n_independent_bath, charge_array_bath=self.charge_array)
+            # store the values of dipole array and reuse it next time
+            self.dx_array_previous, self.dy_array_previous, self.dz_array_previous = self.dx_array, self.dy_array, self.dz_array
+            self.dx_array, self.dy_array, self.dz_array = dx_array, dy_array, dz_array
             #info("mux = %.6f muy = %.6f muz = %.6f [units of a.u.]" %(dipole_x_tot, dipole_y_tot, dipole_z_tot), verbosity.medium)
             # 5. calculate photonic contribution of total energy
             e_ph = self.ph.get_ph_energy(dx_array=dx_array, dy_array=dy_array)
             # 6. calculate photonic forces
             f_ph = self.ph.get_ph_forces(dx_array=dx_array, dy_array=dy_array)
+            if np.abs(self.excite_ph_cw[1]) > 0.0:
+                idx_ph, charge_au, amp_au, omega_drv_cminv, dt_fs, tstart_fs, tend_fs = self.excite_ph_cw
+                f_ph += self.ph.get_ph_driving_cw_forces(idx_ph=idx_ph, charge_au=charge_au, amp_au=amp_au, omega_drv_cminv=omega_drv_cminv,
+                                                         dt_fs=dt_fs, tstart_fs=tstart_fs, tend_fs=tend_fs)
+            elif np.abs(self.excite_ph_gaussian[1]) > 0.0:
+                idx_ph, charge_au, amp_au, omega_drv_cminv, t0_fs, tau_fs, dt_fs, tstart_fs, tend_fs = self.excite_ph_gaussian
+                f_ph += self.ph.get_ph_driving_gaussian_forces(idx_ph=idx_ph, charge_au=charge_au, amp_au=amp_au, omega_drv_cminv=omega_drv_cminv,
+                                                                 t0_fs=t0_fs, tau_fs=tau_fs, dt_fs=dt_fs, tstart_fs=tstart_fs, tend_fs=tend_fs)
             # 7. calculate cavity forces on nuclei
-            fx_cav, fy_cav = self.ph.get_nuc_cav_forces(dx_array=dx_array, dy_array=dy_array, charge_array_bath=self.charge_array)
+            if self.simu_method == "rt-ehrenfest":
+                fx_cav, fy_cav, fz_cav = self.ph.get_nuc_cav_forces(dx_array=dx_array, dy_array=dy_array, dipdrv_dict=dipdrv_dict, method=self.simu_method)
+            else:
+                # by default, we will try to calculate cavity forces on nuclei with predefined MM charges (the simplest way)
+                fx_cav, fy_cav, fz_cav = self.ph.get_nuc_cav_forces(dx_array=dx_array, dy_array=dy_array, charge_array_bath=self.charge_array)
             # 8. add cavity effects to our output
             result_tot[0] += e_ph
             result_tot[1][:ndim_tot:3] += fx_cav
             result_tot[1][1:ndim_tot:3] += fy_cav
+            result_tot[1][2:ndim_tot:3] += fz_cav
             result_tot[1][ndim_tot:] = f_ph
             # additional output for debugging
             """
@@ -1364,7 +1532,11 @@ class FFGenCavSocket(ForceField):
             "t_queued": newreq_lst[0]["t_queued"],
             "t_dispatched": newreq_lst[0]["t_dispatched"],
             "t_finished": newreq_lst[-1]["t_finished"]
-        })        
+        })
+
+        # increase the count of the queue time
+        self._ncount_queue += 1
+        #print(" ## we are working on _ncount_queue = ", self._ncount_queue)
 
         return newreq
 
