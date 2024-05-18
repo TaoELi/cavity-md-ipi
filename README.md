@@ -56,7 +56,7 @@ Please also check the following Github repositories which store the input and po
 
 - **First-principles QM/MM reactive VSC dynamics** for a dilute solution of Fe(CO)<sub>5</sub> in n-dodecane solvent. [https://github.com/TaoELi/cavmd_examples_qmmm](https://github.com/TaoELi/cavmd_examples_qmmm)
 
-- **Mesoscale molecular dynamics under Fabry-Pérot VSC** [https://github.com/TaoELi/cavmd_examples_fpvsc](https://github.com/TaoELi/cavmd_examples_fpvsc)
+- **Mesoscale molecular dynamics under Fabry-Pérot VSC**. [https://github.com/TaoELi/cavmd_examples_fpvsc](https://github.com/TaoELi/cavmd_examples_fpvsc)
 
 For readers who are interested in reproducing the CavMD work, I strongly suggest the readers to first reproduce the [work](https://arxiv.org/abs/2203.03001) in https://github.com/TaoELi/cavmd_examples_h2o/tree/main/water_trpmd (the classical part) due to its cleaner file structure and documentation.
 
