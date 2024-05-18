@@ -16,6 +16,8 @@ This approach is still under development and more features will be reported and 
 
 - Propagating **first-principles reactive** molecular dynamics under VSC spanning from (i) a single molecule in the gas phase to (ii) a large collection of molecules in the solvent environment (beta version).
 
+- Propagating mesoscale molecular dynamics under **Fabry-Pérot VSC** by including many cavity modes at different in-plane frequencies.
+
 ## System Requirement
 
 #### Hardware Requirements
@@ -54,6 +56,8 @@ Please also check the following Github repositories which store the input and po
 
 - **First-principles QM/MM reactive VSC dynamics** for a dilute solution of Fe(CO)<sub>5</sub> in n-dodecane solvent. [https://github.com/TaoELi/cavmd_examples_qmmm](https://github.com/TaoELi/cavmd_examples_qmmm)
 
+- **Mesoscale molecular dynamics under Fabry-Pérot VSC** [https://github.com/TaoELi/cavmd_examples_fpvsc](https://github.com/TaoELi/cavmd_examples_fpvsc)
+
 For readers who are interested in reproducing the CavMD work, I strongly suggest the readers to first reproduce the [work](https://arxiv.org/abs/2203.03001) in https://github.com/TaoELi/cavmd_examples_h2o/tree/main/water_trpmd (the classical part) due to its cleaner file structure and documentation.
 
 ## Folder structure
@@ -75,24 +79,26 @@ If you directly use the provided code in your simulations, please also cite the 
 
 ## Publications using CavMD:
 
-- Li, T. E., Subotnik, J. E., Nitzan, A. Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. [Proc. Natl. Acad. Sci., 2020, 117 (31), 18324–18331](https://doi.org/10.1073/pnas.2009272117). [additional data](https://github.com/TaoELi/cavmd_examples_h2o)
+- Li, T. E., Subotnik, J. E., Nitzan, A. Cavity molecular dynamics simulations of liquid water under vibrational ultrastrong coupling. [Proc. Natl. Acad. Sci., 2020, 117 (31), 18324–18331](https://doi.org/10.1073/pnas.2009272117). [data](https://github.com/TaoELi/cavmd_examples_h2o)
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Cavity Molecular Dynamics Simulations of Vibrational Polariton-Enhanced Molecular Nonlinear Absorption. [J. Chem. Phys. 2021, 154 (9), 094124](https://doi.org/10.1063/5.0037623). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Cavity Molecular Dynamics Simulations of Vibrational Polariton-Enhanced Molecular Nonlinear Absorption. [J. Chem. Phys. 2021, 154 (9), 094124](https://doi.org/10.1063/5.0037623). [data](https://github.com/TaoELi/cavmd_examples_co2)
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. [Angew. Chem. Int. Ed. 2021, 60 (28), 15533-15540]( https://doi.org/10.1002/anie.202103920). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Collective vibrational strong coupling effects on molecular vibrational relaxation and energy transfer: Numerical insights via cavity molecular dynamics simulations. [Angew. Chem. Int. Ed. 2021, 60 (28), 15533-15540]( https://doi.org/10.1002/anie.202103920). [data](https://github.com/TaoELi/cavmd_examples_co2)
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Energy-efficient pathway for selectively exciting solute molecules to high vibrational states via solvent vibration-polariton pumping. [Nat. Commun., 2022, 13, 4203](https://www.nature.com/articles/s41467-022-31703-8). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Energy-efficient pathway for selectively exciting solute molecules to high vibrational states via solvent vibration-polariton pumping. [Nat. Commun., 2022, 13, 4203](https://www.nature.com/articles/s41467-022-31703-8). [data](https://github.com/TaoELi/cavmd_examples_co2)
 
-- Li, T. E.; Nitzan, A.; Subotnik, J. E. Polariton relaxation under vibrational strong coupling: Comparing cavity molecular dynamics simulations against Fermi's golden rule rate. [J. Chem. Phys. 2022, 156 (13), 134106](https://doi.org/10.1063/5.0079784). [additional code](https://github.com/TaoELi/cavmd_examples_co2)
+- Li, T. E.; Nitzan, A.; Subotnik, J. E. Polariton relaxation under vibrational strong coupling: Comparing cavity molecular dynamics simulations against Fermi's golden rule rate. [J. Chem. Phys. 2022, 156 (13), 134106](https://doi.org/10.1063/5.0079784). [data](https://github.com/TaoELi/cavmd_examples_co2)
 
-- Li, T. E., Nitzan, A., Hammes-Schiffer, S., Subotnik, J. E. Quantum Simulations of Vibrational Strong Coupling via Path Integrals. [J. Phys. Chem. Lett. 2022, 13 (17), 3890–3895](https://doi.org/10.1021/acs.jpclett.2c00613). [additional code](https://github.com/TaoELi/cavmd_examples_h2o)
+- Li, T. E., Nitzan, A., Hammes-Schiffer, S., Subotnik, J. E. Quantum Simulations of Vibrational Strong Coupling via Path Integrals. [J. Phys. Chem. Lett. 2022, 13 (17), 3890–3895](https://doi.org/10.1021/acs.jpclett.2c00613). [data](https://github.com/TaoELi/cavmd_examples_h2o)
 
-- Li, T. E., Hammes-Schiffer, S.  QM/MM Modeling of Vibrational Polariton Induced Energy Transfer and Chemical Dynamics. [J. Am. Chem. Soc. 2022, accepted](https://arxiv.org/abs/2212.02322). [additional code](https://github.com/TaoELi/cavmd_examples_qmmm)
+- Li, T. E., Hammes-Schiffer, S.  QM/MM Modeling of Vibrational Polariton Induced Energy Transfer and Chemical Dynamics. [J. Am. Chem. Soc. 2023, 145 (1) 377–384](https://doi.org/10.1021/jacs.2c10170). [data](https://github.com/TaoELi/cavmd_examples_qmmm)
+
+- Li, T. E. Mesoscale Molecular Simulations of Fabry-Pérot Vibrational Strong Coupling [arXiv:2403.12282](https://arxiv.org/abs/2403.12282). [data](https://github.com/TaoELi/cavmd_examples_fpvsc)
 
 ## Implementation
 
 The implementation of CavMD relies on conventional MD packages. Currently, CavMD is implemented on top of the [i-pi](http://ipi-code.org/) package, which provides a user-friendly interface for nuclear dynamics. Because the [i-pi](http://ipi-code.org/) package is written in python, it enables a fast realization of new algorithms and ideas when the cavity is considered.
 
-In general, i-pi provides an interface to separate the nuclear force evaluation and the rest functions of nuclear dynamics. Currently, CavMD can be performed in i-pi using a new force evaluator: **ffcavphsocket**, which is operated in a similar way as using the original **ffsocket** evaluator but with additional parameters to control the degrees of freedom for cavity photons.
+In general, i-pi provides an interface to separate the nuclear force evaluation and the rest functions of nuclear dynamics. Currently, CavMD can be performed in i-pi using new force evaluators: **ffcavphsocket** (for single-mode VSC) and **ffgencavsocket** (for Fabry-Perot VSC), which is operated in a similar way as using the original **ffsocket** evaluator but with additional parameters to control the degrees of freedom for cavity photons.
 
 Therefore, performing CavMD simulations is **very easy** in practice: the only background is to know how to perform conventional molecular dynamics outside the cavity with i-pi (which may take one hour to study from scratch), and the inside cavity results can be simulated by adding a few parameters. In short, it is user-friendly to all researchers.
