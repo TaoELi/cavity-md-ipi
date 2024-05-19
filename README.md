@@ -46,7 +46,7 @@ Please check folder [**"tutorials/"**](tutorials/) for step-by-step introduction
 
 3. [First-principles CavMD for many molecules under VSC](tutorials/independent_bath_approx/);
 
-Please also feel free to send me an email (see [here](https://taoeli.github.io/)) if you are confused about any functionality of CavMD or want to use this code for a feature not mentioned in the tutorials.
+Please also feel free to send me an email (see [here](https://www.taoeli.org/taos-cv/)) if you are confused about any functionality of CavMD or want to use this code for a feature not mentioned in the tutorials.
 
 Please also check the following Github repositories which store the input and post-processing files for reproducing all figures in the publications of CavMD.
 
@@ -99,6 +99,6 @@ If you directly use the provided code in your simulations, please also cite the 
 
 The implementation of CavMD relies on conventional MD packages. Currently, CavMD is implemented on top of the [i-pi](http://ipi-code.org/) package, which provides a user-friendly interface for nuclear dynamics. Because the [i-pi](http://ipi-code.org/) package is written in python, it enables a fast realization of new algorithms and ideas when the cavity is considered.
 
-In general, i-pi provides an interface to separate the nuclear force evaluation and the rest functions of nuclear dynamics. Currently, CavMD can be performed in i-pi using new force evaluators: **ffcavphsocket** (for single-mode VSC) and **ffgencavsocket** (for Fabry-Perot VSC), which is operated in a similar way as using the original **ffsocket** evaluator but with additional parameters to control the degrees of freedom for cavity photons.
+In general, i-pi provides an interface to separate the nuclear force evaluation and the rest functions of nuclear dynamics. Currently, CavMD can be performed in i-pi using new force evaluators: **ffcavphsocket** (for single-mode VSC) and **ffgencavsocket** (for Fabry-Perot VSC), which are operated in a similar way as using the original **ffsocket** evaluator but with additional parameters to control the degrees of freedom of cavity photons.
 
 Therefore, performing CavMD simulations is **very easy** in practice: the only background is to know how to perform conventional molecular dynamics outside the cavity with i-pi (which may take one hour to study from scratch), and the inside cavity results can be simulated by adding a few parameters. In short, it is user-friendly to all researchers.
