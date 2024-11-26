@@ -55,7 +55,7 @@ class dipole:
                 print(self.pulse_atoms)
                 # calculate the corresponding index in the force (correspond to the x axis)
                 # atom 1 atom 2 atom 3
-                self.pulse_atoms_force_index = np.array([x*3+self.add_pulse_direction for x in self.pulse_atoms])
+                self.pulse_atoms_force_index = np.array([x*3+self.add_pulse_direction for x in self.pulse_atoms], dtype=np.int32)
                 self.t = data.get("t0", 0.0)
                 self.dt = data.get("dt", 0.5)
                 print("## add initial pulse with E0 %.2E at time %.2f for molecules ##" %(self.pulse_params[0], self.pulse_params[4]))
@@ -95,7 +95,7 @@ class dipole:
                 print(self.cw_atoms)
                 # calculate the corresponding index in the force (correspond to the x axis)
                 # atom 1 atom 2 atom 3
-                self.cw_atoms_force_index = np.array([x*3+self.add_cw_direction for x in self.cw_atoms])
+                self.cw_atoms_force_index = np.array([x*3+self.add_cw_direction for x in self.cw_atoms], dtype=np.int32)
                 self.t = data.get("t0", 0.0)
                 self.dt = data.get("dt", 0.5)
             else:
