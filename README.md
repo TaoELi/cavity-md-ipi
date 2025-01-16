@@ -93,7 +93,9 @@ If you directly use the provided code in your simulations, please also cite the 
 
 - Li, T. E., Hammes-Schiffer, S.  QM/MM Modeling of Vibrational Polariton Induced Energy Transfer and Chemical Dynamics. [J. Am. Chem. Soc. 2023, 145 (1) 377–384](https://doi.org/10.1021/jacs.2c10170). [data](https://github.com/TaoELi/cavmd_examples_qmmm)
 
-- Li, T. E. Mesoscale Molecular Simulations of Fabry-Pérot Vibrational Strong Coupling [arXiv:2403.12282](https://arxiv.org/abs/2403.12282). [data](https://github.com/TaoELi/cavmd_examples_fpvsc)
+- Li, T. E. Mesoscale Molecular Simulations of Fabry-Pérot Vibrational Strong Coupling [J. Chem. Theory Comput.  2024, 20 (16), 7016–7031](https://doi.org/10.1021/acs.jctc.4c00349). [data](https://github.com/TaoELi/cavmd_examples_fpvsc)
+
+- Ji, X., Li, T. E. Selective Excitation of IR-Inactive Vibrations via Vibrational Polaritons: Insights from Atomistic Simulations [submitted](tbd). [data](https://github.com/TaoELi/cavmd_examples_ch4)
 
 ## Implementation
 
